@@ -124,7 +124,7 @@ export function DFTVisualizer() {
   };
 
   return (
-    <div className="bg-dark text-text-primary font-sans min-h-screen">
+    <div className="bg-dark text-text-primary font-sans min-h-screen flex flex-col">
       {/* Header */}
       <header className="bg-surface border-b border-gray-700 px-3 md:px-6 py-2 md:py-4 sticky top-0 z-50">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-0">
@@ -241,9 +241,9 @@ export function DFTVisualizer() {
       </header>
 
       {/* Main Visualization Grid */}
-      <main className="flex flex-col md:grid md:grid-cols-4 gap-0 md:gap-1 min-h-0">
+      <main className="flex flex-col md:grid md:grid-cols-4 gap-0 md:gap-1 flex-1 overflow-y-auto md:overflow-y-hidden">
         {/* Section 1 - Time Domain (full height on mobile) */}
-        <div className="h-48 md:h-auto flex-shrink-0">
+        <div className="h-56 md:h-auto flex-shrink-0 mb-1 md:mb-0">
           <TimeDomainSection
             analyserNode={analyserNode}
             currentAmplitude={currentAmplitude}
