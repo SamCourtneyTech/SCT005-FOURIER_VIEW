@@ -241,7 +241,7 @@ export function DFTVisualizer() {
       </header>
 
       {/* Main Visualization Grid */}
-      <main className="flex flex-col md:grid md:grid-cols-4 gap-1 md:gap-1 min-h-0">
+      <main className="flex flex-col md:grid md:grid-cols-4 gap-0 md:gap-1 min-h-0">
         {/* Section 1 - Time Domain (full height on mobile) */}
         <div className="h-48 md:h-auto flex-shrink-0">
           <TimeDomainSection
