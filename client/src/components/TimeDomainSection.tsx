@@ -5,6 +5,7 @@ interface TimeDomainSectionProps {
   currentAmplitude: number;
   dominantFreq: number;
   sampleRate: number;
+  isPlaying?: boolean;
 }
 
 export function TimeDomainSection({
@@ -12,6 +13,7 @@ export function TimeDomainSection({
   currentAmplitude,
   dominantFreq,
   sampleRate,
+  isPlaying = true,
 }: TimeDomainSectionProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>();
@@ -78,7 +80,9 @@ export function TimeDomainSection({
 
       ctx.stroke();
 
-      animationRef.current = requestAnimationFrame(draw);
+      if (isPlaying) {
+        animationRef.current = requestAnimationFrame(draw);
+      }
     };
 
     draw();
@@ -88,7 +92,7 @@ export function TimeDomainSection({
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [analyserNode]);
+  }, [analyserNode, isPlaying]);
 
   return (
     <div className="bg-surface border-r border-gray-700 p-4 flex flex-col">

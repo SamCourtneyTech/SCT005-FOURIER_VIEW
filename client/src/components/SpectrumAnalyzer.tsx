@@ -6,6 +6,7 @@ interface SpectrumAnalyzerProps {
   peakFrequency: number;
   peakMagnitude: number;
   frequencyResolution: number;
+  isPlaying?: boolean;
 }
 
 export function SpectrumAnalyzer({
@@ -13,6 +14,7 @@ export function SpectrumAnalyzer({
   peakFrequency,
   peakMagnitude,
   frequencyResolution,
+  isPlaying = true,
 }: SpectrumAnalyzerProps) {
   const [isLogScale, setIsLogScale] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -82,7 +84,9 @@ export function SpectrumAnalyzer({
         x += barWidth;
       }
 
-      animationRef.current = requestAnimationFrame(draw);
+      if (isPlaying) {
+        animationRef.current = requestAnimationFrame(draw);
+      }
     };
 
     draw();
@@ -92,7 +96,7 @@ export function SpectrumAnalyzer({
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [analyserNode, isLogScale]);
+  }, [analyserNode, isLogScale, isPlaying]);
 
   return (
     <div className="bg-surface p-4 flex flex-col">

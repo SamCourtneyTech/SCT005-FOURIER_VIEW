@@ -12,7 +12,7 @@ interface SummationSectionProps {
   selectedFrequencyBin: number;
   onSelectFrequencyBin: (bin: number) => void;
   sampleWindow: number;
-  visualizationMode?: "continuous" | "freeze";
+  isPlaying?: boolean;
 }
 
 export function SummationSection({
@@ -20,7 +20,7 @@ export function SummationSection({
   selectedFrequencyBin,
   onSelectFrequencyBin,
   sampleWindow,
-  visualizationMode = "continuous",
+  isPlaying = true,
 }: SummationSectionProps) {
   const canvasRefs = useRef<(HTMLCanvasElement | null)[]>([]);
 

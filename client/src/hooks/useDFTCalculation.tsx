@@ -19,7 +19,7 @@ export function useDFTCalculation(
   analyserNode: AnalyserNode | null,
   sampleWindow: number,
   selectedFrequencyBin: number,
-  visualizationMode: "continuous" | "freeze"
+  isPlaying: boolean
 ) {
   const [timeData, setTimeData] = useState<Float32Array | null>(null);
   const [frequencyData, setFrequencyData] = useState<Uint8Array | null>(null);
@@ -91,8 +91,8 @@ export function useDFTCalculation(
       // Update current sample for visualization
       setCurrentSample((prev) => (prev + 1) % sampleWindow);
 
-      // In freeze mode, capture a snapshot when mode changes
-      if (visualizationMode === "freeze" && !frozenData) {
+      // In pause mode, capture a snapshot when audio stops
+      if (!isPlaying && !frozenData) {
         setFrozenData({
           timeData: new Float32Array(windowData),
           dftResults: [...results],
@@ -100,24 +100,24 @@ export function useDFTCalculation(
         });
       }
 
-      // Only continue animation in continuous mode
-      if (visualizationMode === "continuous") {
+      // Only continue animation when playing
+      if (isPlaying) {
         requestAnimationFrame(updateDFT);
       }
     };
 
     updateDFT();
-  }, [analyserNode, sampleWindow, selectedFrequencyBin, visualizationMode, frozenData]);
+  }, [analyserNode, sampleWindow, selectedFrequencyBin, isPlaying, frozenData]);
 
-  // Clear frozen data when switching back to continuous mode
+  // Clear frozen data when resuming playback
   useEffect(() => {
-    if (visualizationMode === "continuous") {
+    if (isPlaying) {
       setFrozenData(null);
     }
-  }, [visualizationMode]);
+  }, [isPlaying]);
 
-  // Return frozen data if in freeze mode, otherwise return live data
-  const currentData = visualizationMode === "freeze" && frozenData ? {
+  // Return frozen data if paused, otherwise return live data
+  const currentData = !isPlaying && frozenData ? {
     timeData: frozenData.timeData,
     dftResults: frozenData.dftResults,
     twiddleFactors: frozenData.twiddleFactors,
