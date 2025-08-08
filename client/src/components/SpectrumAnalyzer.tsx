@@ -7,6 +7,8 @@ interface SpectrumAnalyzerProps {
   peakMagnitude: number;
   frequencyResolution: number;
   isPlaying?: boolean;
+  sampleWindow: number;
+  dftResults: { real: number; imag: number; magnitude: number; phase: number }[];
 }
 
 export function SpectrumAnalyzer({
@@ -15,6 +17,8 @@ export function SpectrumAnalyzer({
   peakMagnitude,
   frequencyResolution,
   isPlaying = true,
+  sampleWindow,
+  dftResults,
 }: SpectrumAnalyzerProps) {
   const [isLogScale, setIsLogScale] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -28,10 +32,6 @@ export function SpectrumAnalyzer({
     if (!ctx) return;
 
     const draw = () => {
-      const bufferLength = analyserNode.frequencyBinCount;
-      const dataArray = new Uint8Array(bufferLength);
-      analyserNode.getByteFrequencyData(dataArray);
-
       // Set canvas size
       canvas.width = canvas.offsetWidth;
       canvas.height = canvas.offsetHeight;
@@ -43,77 +43,62 @@ export function SpectrumAnalyzer({
       // Draw grid
       ctx.strokeStyle = '#333';
       ctx.lineWidth = 1;
-      const gridSpacing = 20;
+      const gridSpacing = canvas.width / sampleWindow;
       
-      for (let i = 0; i < canvas.width; i += gridSpacing) {
+      // Draw vertical grid lines for each frequency bin
+      for (let i = 0; i <= sampleWindow; i++) {
+        const x = i * gridSpacing;
         ctx.beginPath();
-        ctx.moveTo(i, 0);
-        ctx.lineTo(i, canvas.height);
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
         ctx.stroke();
       }
       
-      for (let i = 0; i < canvas.height; i += gridSpacing) {
+      // Draw horizontal grid lines
+      for (let i = 0; i < canvas.height; i += 20) {
         ctx.beginPath();
         ctx.moveTo(0, i);
         ctx.lineTo(canvas.width, i);
         ctx.stroke();
       }
 
-      // Draw frequency spectrum with logarithmic frequency scale
-      const sampleRate = analyserNode.context.sampleRate;
-      const maxFreq = 20000; // 20kHz max
-      const minFreq = 20; // 20Hz min
-      
-      // Create logarithmic frequency mapping
-      const logMinFreq = Math.log2(minFreq);
-      const logMaxFreq = Math.log2(maxFreq);
-      const logRange = logMaxFreq - logMinFreq;
+      // Draw frequency bin labels
+      ctx.fillStyle = '#666';
+      ctx.font = '10px Roboto Mono';
+      ctx.textAlign = 'center';
+      for (let i = 0; i < sampleWindow; i++) {
+        const x = (i + 0.5) * gridSpacing;
+        ctx.fillText(`k=${i}`, x, canvas.height - 5);
+      }
 
-      // Draw frequency markers (vertical lines only, no labels)
-      const freqLabels = [20, 100, 1000, 10000, 20000];
-      freqLabels.forEach(freq => {
-        const logFreq = Math.log2(freq);
-        const x = ((logFreq - logMinFreq) / logRange) * canvas.width;
+      // Draw DFT results as frequency spectrum
+      if (dftResults && dftResults.length >= sampleWindow) {
+        ctx.fillStyle = '#FF5722';
+        const barWidth = gridSpacing * 0.8; // Leave some spacing between bars
         
-        // Draw vertical lines for frequency markers
-        ctx.strokeStyle = '#444';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, canvas.height);
-        ctx.stroke();
-      });
-
-      // Draw spectrum bars
-      ctx.strokeStyle = '#00ff88';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-
-      let firstPoint = true;
-      for (let i = 1; i < bufferLength; i++) {
-        const freq = (i * sampleRate) / (2 * bufferLength);
-        if (freq < minFreq || freq > maxFreq) continue;
-
-        const logFreq = Math.log2(freq);
-        const x = ((logFreq - logMinFreq) / logRange) * canvas.width;
-        
-        const value = dataArray[i];
-        const y = canvas.height - ((value / 255) * canvas.height);
-
-        if (firstPoint) {
-          ctx.moveTo(x, y);
-          firstPoint = false;
-        } else {
-          ctx.lineTo(x, y);
+        for (let i = 0; i < sampleWindow; i++) {
+          const magnitude = dftResults[i]?.magnitude || 0;
+          const maxMagnitude = Math.max(...dftResults.slice(0, sampleWindow).map(r => r.magnitude));
+          const normalizedMagnitude = maxMagnitude > 0 ? magnitude / maxMagnitude : 0;
+          
+          const x = i * gridSpacing + (gridSpacing - barWidth) / 2;
+          const barHeight = normalizedMagnitude * (canvas.height - 20); // Leave space for labels
+          
+          ctx.fillRect(x, canvas.height - 20 - barHeight, barWidth, barHeight);
+          
+          // Draw magnitude values
+          ctx.fillStyle = '#AAA';
+          ctx.font = '8px Roboto Mono';
+          ctx.textAlign = 'center';
+          ctx.fillText(magnitude.toFixed(2), x + barWidth/2, canvas.height - 25 - barHeight);
+          ctx.fillStyle = '#FF5722';
         }
       }
-      
-      ctx.stroke();
-
-      if (isPlaying) {
-        animationRef.current = requestAnimationFrame(draw);
-      }
     };
+
+    if (isPlaying) {
+      animationRef.current = requestAnimationFrame(draw);
+    }
 
     draw();
 
@@ -122,7 +107,7 @@ export function SpectrumAnalyzer({
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [analyserNode, isLogScale, isPlaying]);
+  }, [analyserNode, dftResults, sampleWindow, isPlaying]);
 
   return (
     <div className="bg-surface p-4 flex flex-col">
@@ -148,24 +133,6 @@ export function SpectrumAnalyzer({
           ref={canvasRef}
           className="w-full h-full visualization-canvas rounded"
         />
-
-        {/* Frequency markers overlay */}
-        <div className="absolute bottom-3 left-3 right-3 flex justify-between text-xs text-text-secondary font-mono pointer-events-none">
-          <span>0 Hz</span>
-          <span>5.5k</span>
-          <span>11k</span>
-          <span>16.5k</span>
-          <span>22k Hz</span>
-        </div>
-
-        {/* Magnitude markers overlay */}
-        <div className="absolute top-3 left-3 bottom-3 flex flex-col justify-between text-xs text-text-secondary font-mono pointer-events-none">
-          <span>0 dB</span>
-          <span>-20</span>
-          <span>-40</span>
-          <span>-60</span>
-          <span>-80 dB</span>
-        </div>
       </div>
 
       <div className="mt-3 space-y-2">

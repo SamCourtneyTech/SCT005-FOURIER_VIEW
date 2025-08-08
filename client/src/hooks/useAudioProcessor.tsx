@@ -43,10 +43,19 @@ export function useAudioProcessor() {
       const response = await fetch(url);
       const arrayBuffer = await response.arrayBuffer();
       
-      // Try to decode audio data with better error handling for M4A
+      // Try to decode audio data with comprehensive error handling
       const decodedBuffer = await audioContext.decodeAudioData(arrayBuffer).catch((error) => {
         console.error('Audio decoding error:', error);
-        throw new Error('Audio format not supported by browser. M4A files may not work in all browsers. Try MP3, WAV, or OGG.');
+        console.error('Error details:', error.message);
+        
+        // More specific error messages based on common issues
+        if (error.message.includes('WEBM') || error.message.includes('M4A') || error.message.includes('AAC')) {
+          throw new Error('M4A/AAC format not fully supported. Please try MP3, WAV, or OGG format.');
+        } else if (error.message.includes('DRM') || error.message.includes('protected')) {
+          throw new Error('DRM-protected audio files are not supported.');
+        } else {
+          throw new Error('Audio file format not supported by browser. Please try MP3, WAV, or OGG format.');
+        }
       });
       
       setAudioBuffer(decodedBuffer);
@@ -57,7 +66,8 @@ export function useAudioProcessor() {
     } catch (error) {
       console.error('Error loading audio file:', error);
       // Show user-friendly error for unsupported formats
-      alert('Could not load audio file. M4A files may not be supported by your browser. Please try MP3, WAV, or OGG format.');
+      const errorMessage = error instanceof Error ? error.message : 'Could not load audio file. Please try MP3, WAV, or OGG format.';
+      alert(errorMessage);
     }
   }, [audioContext, initializeAudioContext]);
 

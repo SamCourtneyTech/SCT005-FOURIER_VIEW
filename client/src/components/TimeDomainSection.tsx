@@ -6,6 +6,8 @@ interface TimeDomainSectionProps {
   dominantFreq: number;
   sampleRate: number;
   isPlaying?: boolean;
+  sampleWindow: number;
+  timeData: Float32Array | null;
 }
 
 export function TimeDomainSection({
@@ -14,6 +16,8 @@ export function TimeDomainSection({
   dominantFreq,
   sampleRate,
   isPlaying = true,
+  sampleWindow,
+  timeData,
 }: TimeDomainSectionProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>();
@@ -26,10 +30,6 @@ export function TimeDomainSection({
     if (!ctx) return;
 
     const draw = () => {
-      const bufferLength = analyserNode.frequencyBinCount;
-      const dataArray = new Uint8Array(bufferLength);
-      analyserNode.getByteTimeDomainData(dataArray);
-
       // Set canvas size
       canvas.width = canvas.offsetWidth;
       canvas.height = canvas.offsetHeight;
@@ -41,44 +41,65 @@ export function TimeDomainSection({
       // Draw grid
       ctx.strokeStyle = '#333';
       ctx.lineWidth = 1;
-      const gridSpacing = 20;
+      const gridSpacing = canvas.width / sampleWindow;
       
-      for (let i = 0; i < canvas.width; i += gridSpacing) {
+      // Draw vertical grid lines for each sample (n markings)
+      for (let i = 0; i <= sampleWindow; i++) {
+        const x = i * gridSpacing;
         ctx.beginPath();
-        ctx.moveTo(i, 0);
-        ctx.lineTo(i, canvas.height);
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
         ctx.stroke();
       }
       
-      for (let i = 0; i < canvas.height; i += gridSpacing) {
+      // Draw horizontal grid lines
+      for (let i = 0; i < canvas.height; i += 20) {
         ctx.beginPath();
         ctx.moveTo(0, i);
         ctx.lineTo(canvas.width, i);
         ctx.stroke();
       }
 
-      // Draw waveform
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = '#1976D2';
-      ctx.beginPath();
-
-      const sliceWidth = canvas.width / bufferLength;
-      let x = 0;
-
-      for (let i = 0; i < bufferLength; i++) {
-        const v = dataArray[i] / 128.0;
-        const y = (v * canvas.height) / 2;
-
-        if (i === 0) {
-          ctx.moveTo(x, y);
-        } else {
-          ctx.lineTo(x, y);
-        }
-
-        x += sliceWidth;
+      // Draw n markings on x-axis
+      ctx.fillStyle = '#666';
+      ctx.font = '10px Roboto Mono';
+      ctx.textAlign = 'center';
+      for (let i = 0; i < sampleWindow; i++) {
+        const x = (i + 0.5) * gridSpacing;
+        ctx.fillText(`n=${i}`, x, canvas.height - 5);
       }
 
-      ctx.stroke();
+      // Draw waveform using timeData scaled to sample window
+      if (timeData && timeData.length >= sampleWindow) {
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#1976D2';
+        ctx.beginPath();
+
+        const sliceWidth = canvas.width / sampleWindow;
+        let x = 0;
+
+        for (let i = 0; i < sampleWindow; i++) {
+          const amplitude = timeData[i] || 0;
+          const normalizedAmplitude = (amplitude + 1) / 2; // Convert from -1,1 to 0,1
+          const y = canvas.height - (normalizedAmplitude * canvas.height);
+
+          if (i === 0) {
+            ctx.moveTo(x + sliceWidth / 2, y);
+          } else {
+            ctx.lineTo(x + sliceWidth / 2, y);
+          }
+
+          // Draw sample points
+          ctx.fillStyle = '#1976D2';
+          ctx.beginPath();
+          ctx.arc(x + sliceWidth / 2, y, 3, 0, 2 * Math.PI);
+          ctx.fill();
+
+          x += sliceWidth;
+        }
+
+        ctx.stroke();
+      }
 
       if (isPlaying) {
         animationRef.current = requestAnimationFrame(draw);

@@ -248,6 +248,8 @@ export function DFTVisualizer() {
           dominantFreq={dominantFreq}
           sampleRate={sampleRate}
           isPlaying={isPlaying}
+          sampleWindow={sampleWindow}
+          timeData={timeData}
         />
 
         <DFTCalculationSection
@@ -275,6 +277,8 @@ export function DFTVisualizer() {
           peakMagnitude={peakMagnitude}
           frequencyResolution={frequencyResolution}
           isPlaying={isPlaying}
+          sampleWindow={sampleWindow}
+          dftResults={dftResults}
         />
       </main>
     </div>
