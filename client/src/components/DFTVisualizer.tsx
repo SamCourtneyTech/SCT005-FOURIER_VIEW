@@ -1,8 +1,8 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Play, Pause, OctagonMinus, Upload } from "lucide-react";
+import { Play, Pause, Upload } from "lucide-react";
 import { TimeDomainSection } from "./TimeDomainSection";
 import { DFTCalculationSection } from "./DFTCalculationSection";
 import { SummationSection } from "./SummationSection";
@@ -29,7 +29,7 @@ const EXAMPLE_AUDIO_OPTIONS = [
 export function DFTVisualizer() {
   const [sampleWindow, setSampleWindow] = useState(8);
   const [selectedFrequencyBin, setSelectedFrequencyBin] = useState(0);
-  const [selectedExampleAudio, setSelectedExampleAudio] = useState<string>("");
+  const [selectedExampleAudio, setSelectedExampleAudio] = useState<string>("full_song");
   const [viewMode, setViewMode] = useState<"vector" | "projection">("vector");
   const [uploadedFileName, setUploadedFileName] = useState<string>("");
   const [currentAudioSource, setCurrentAudioSource] = useState<"example" | "uploaded">("example");
@@ -112,6 +112,7 @@ export function DFTVisualizer() {
   const handleExampleAudioChange = async (value: string) => {
     setSelectedExampleAudio(value);
     setCurrentAudioSource("example");
+    setUploadedFileName(""); // Clear uploaded selection
     if (value) {
       await loadExampleAudio(value);
     }
@@ -122,6 +123,13 @@ export function DFTVisualizer() {
     const seconds = Math.floor(time % 60);
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
+
+  // Load default audio on startup
+  useEffect(() => {
+    if (selectedExampleAudio) {
+      loadExampleAudio(selectedExampleAudio);
+    }
+  }, []); // Empty dependency array - only run once on mount
 
   return (
     <div className="bg-dark text-text-primary font-sans min-h-screen flex flex-col">
@@ -218,14 +226,7 @@ export function DFTVisualizer() {
               >
                 {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
               </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={stopAudio}
-                className="text-text-secondary hover:text-white p-2"
-              >
-                <OctagonMinus className="w-5 h-5" />
-              </Button>
+
               <div className="w-32 h-1 bg-gray-600 rounded-full mx-3 relative">
                 <div
                   className="h-full bg-primary rounded-full transition-all duration-100"
@@ -241,7 +242,7 @@ export function DFTVisualizer() {
       </header>
 
       {/* Main Visualization Grid */}
-      <main className="flex flex-col md:grid md:grid-cols-4 gap-0 md:gap-1 flex-1 overflow-y-auto md:overflow-y-hidden">
+      <main className="flex flex-col md:grid md:grid-cols-4 gap-0 md:gap-1 flex-1 overflow-y-auto md:overflow-y-hidden pb-4 md:pb-0">
         {/* Section 1 - Time Domain (full height on mobile) */}
         <div className="h-56 md:h-auto flex-shrink-0">
           <TimeDomainSection

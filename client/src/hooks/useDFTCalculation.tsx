@@ -91,8 +91,8 @@ export function useDFTCalculation(
       // Update current sample for visualization
       setCurrentSample((prev) => (prev + 1) % sampleWindow);
 
-      // In pause mode, capture a snapshot when audio stops
-      if (!isPlaying && !frozenData) {
+      // Store the latest data for freeze functionality
+      if (isPlaying) {
         setFrozenData({
           timeData: new Float32Array(windowData),
           dftResults: [...results],
@@ -109,12 +109,7 @@ export function useDFTCalculation(
     updateDFT();
   }, [analyserNode, sampleWindow, selectedFrequencyBin, isPlaying, frozenData]);
 
-  // Clear frozen data when resuming playback
-  useEffect(() => {
-    if (isPlaying) {
-      setFrozenData(null);
-    }
-  }, [isPlaying]);
+  // Don't clear frozen data when resuming - keep the last captured state
 
   // Return frozen data if paused, otherwise return live data
   const currentData = !isPlaying && frozenData ? {
