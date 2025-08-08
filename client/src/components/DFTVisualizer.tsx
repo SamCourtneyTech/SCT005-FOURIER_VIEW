@@ -255,31 +255,29 @@ export function DFTVisualizer() {
           />
         </div>
 
-        {/* Sections 2 & 3 - Horizontal scroll on mobile */}
-        <div className="h-64 md:contents flex-shrink-0">
-          <div className="flex md:contents overflow-x-auto md:overflow-x-visible gap-2 md:gap-0 h-full pb-1">
-            <div className="w-80 md:w-auto flex-shrink-0 h-full">
-              <DFTCalculationSection
-                sampleWindow={sampleWindow}
-                selectedFrequencyBin={selectedFrequencyBin}
-                timeData={timeData}
-                twiddleFactors={twiddleFactors}
-                currentSample={currentSample}
-                isPlaying={isPlaying}
-                viewMode={viewMode}
-              />
-            </div>
-            <div className="w-80 md:w-auto flex-shrink-0 h-full">
-              <SummationSection
-                dftResults={dftResults}
-                selectedFrequencyBin={selectedFrequencyBin}
-                onSelectFrequencyBin={setSelectedFrequencyBin}
-                sampleWindow={sampleWindow}
-                isPlaying={isPlaying}
-                viewMode={viewMode}
-              />
-            </div>
-          </div>
+        {/* Section 2 - DFT Calculation (own row with horizontal scroll on mobile) */}
+        <div className="h-64 md:h-auto flex-shrink-0">
+          <DFTCalculationSection
+            sampleWindow={sampleWindow}
+            selectedFrequencyBin={selectedFrequencyBin}
+            timeData={timeData}
+            twiddleFactors={twiddleFactors}
+            currentSample={currentSample}
+            isPlaying={isPlaying}
+            viewMode={viewMode}
+          />
+        </div>
+
+        {/* Section 3 - Summation (own row with horizontal scroll on mobile) */}
+        <div className="h-64 md:h-auto flex-shrink-0">
+          <SummationSection
+            dftResults={dftResults}
+            selectedFrequencyBin={selectedFrequencyBin}
+            onSelectFrequencyBin={setSelectedFrequencyBin}
+            sampleWindow={sampleWindow}
+            isPlaying={isPlaying}
+            viewMode={viewMode}
+          />
         </div>
 
         {/* Section 4 - Spectrum Analyzer (own row on mobile) */}
