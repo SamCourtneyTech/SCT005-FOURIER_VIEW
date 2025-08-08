@@ -242,45 +242,57 @@ export function DFTVisualizer() {
       </header>
 
       {/* Main Visualization Grid */}
-      <main className="grid grid-cols-4 gap-1 h-[calc(100vh-80px)]">
-        <TimeDomainSection
-          analyserNode={analyserNode}
-          currentAmplitude={currentAmplitude}
-          dominantFreq={dominantFreq}
-          sampleRate={sampleRate}
-          isPlaying={isPlaying}
-          sampleWindow={sampleWindow}
-          timeData={audioTimeData || timeData}
-        />
+      <main className="flex flex-col md:grid md:grid-cols-4 gap-1 h-[calc(100vh-80px)]">
+        <div className="flex-1 md:flex-none min-h-0">
+          <TimeDomainSection
+            analyserNode={analyserNode}
+            currentAmplitude={currentAmplitude}
+            dominantFreq={dominantFreq}
+            sampleRate={sampleRate}
+            isPlaying={isPlaying}
+            sampleWindow={sampleWindow}
+            timeData={audioTimeData || timeData}
+          />
+        </div>
 
-        <DFTCalculationSection
-          sampleWindow={sampleWindow}
-          selectedFrequencyBin={selectedFrequencyBin}
-          timeData={timeData}
-          twiddleFactors={twiddleFactors}
-          currentSample={currentSample}
-          isPlaying={isPlaying}
-          viewMode={viewMode}
-        />
+        {/* Middle sections with horizontal scroll on mobile */}
+        <div className="flex-1 md:contents min-h-0">
+          <div className="flex md:contents overflow-x-auto md:overflow-x-visible gap-1 md:gap-0 h-full">
+            <div className="min-w-full md:min-w-0 flex-shrink-0 h-full">
+              <DFTCalculationSection
+                sampleWindow={sampleWindow}
+                selectedFrequencyBin={selectedFrequencyBin}
+                timeData={timeData}
+                twiddleFactors={twiddleFactors}
+                currentSample={currentSample}
+                isPlaying={isPlaying}
+                viewMode={viewMode}
+              />
+            </div>
+            <div className="min-w-full md:min-w-0 flex-shrink-0 h-full">
+              <SummationSection
+                dftResults={dftResults}
+                selectedFrequencyBin={selectedFrequencyBin}
+                onSelectFrequencyBin={setSelectedFrequencyBin}
+                sampleWindow={sampleWindow}
+                isPlaying={isPlaying}
+                viewMode={viewMode}
+              />
+            </div>
+          </div>
+        </div>
 
-        <SummationSection
-          dftResults={dftResults}
-          selectedFrequencyBin={selectedFrequencyBin}
-          onSelectFrequencyBin={setSelectedFrequencyBin}
-          sampleWindow={sampleWindow}
-          isPlaying={isPlaying}
-          viewMode={viewMode}
-        />
-
-        <SpectrumAnalyzer
-          analyserNode={analyserNode}
-          peakFrequency={peakFrequency}
-          peakMagnitude={peakMagnitude}
-          frequencyResolution={frequencyResolution}
-          isPlaying={isPlaying}
-          sampleWindow={sampleWindow}
-          dftResults={dftResults}
-        />
+        <div className="flex-1 md:flex-none min-h-0">
+          <SpectrumAnalyzer
+            analyserNode={analyserNode}
+            peakFrequency={peakFrequency}
+            peakMagnitude={peakMagnitude}
+            frequencyResolution={frequencyResolution}
+            isPlaying={isPlaying}
+            sampleWindow={sampleWindow}
+            dftResults={dftResults}
+          />
+        </div>
       </main>
     </div>
   );
