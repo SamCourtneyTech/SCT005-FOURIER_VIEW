@@ -109,33 +109,35 @@ export function DFTCalculationSection({
       </div>
 
       <div className="flex-1 overflow-hidden">
-        <div className="scroll-container h-full overflow-y-auto space-y-2" style={{ maxHeight: 'calc(100vh - 300px)' }}>
-          {twiddleFactors.map((factor, index) => (
-            <div key={index} className="bg-dark rounded-lg p-3 border border-gray-700">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-mono text-accent">n = {index}</span>
-                <span className="text-xs text-text-secondary">
-                  W₈{selectedFrequencyBin * index} = {factor.real.toFixed(3)} {factor.imag >= 0 ? '+' : ''} {factor.imag.toFixed(3)}i
-                </span>
+        <div className="scroll-container h-full overflow-x-auto overflow-y-hidden pb-1">
+          <div className="flex gap-3 h-full" style={{ minHeight: '200px' }}>
+            {twiddleFactors.map((factor, index) => (
+              <div key={index} className="bg-dark rounded-lg p-3 border border-gray-700 flex-shrink-0 w-72">
+                <div className="flex flex-col items-center mb-2">
+                  <span className="text-sm font-mono text-accent">n = {index}</span>
+                  <span className="text-xs text-text-secondary text-center">
+                    W₈{selectedFrequencyBin * index} = {factor.real.toFixed(3)} {factor.imag >= 0 ? '+' : ''} {factor.imag.toFixed(3)}i
+                  </span>
+                </div>
+                <canvas
+                  ref={(el) => (canvasRefs.current[index] = el)}
+                  width="280"
+                  height="60"
+                  className="w-full visualization-canvas rounded text-xs"
+                />
+                <div className="flex justify-between mt-2 text-xs text-text-secondary font-mono">
+                  <span>Amp: {factor.amplitude.toFixed(3)}</span>
+                  <span>
+                    {viewMode === "vector" ? (
+                      <>Result: {factor.result.real.toFixed(3)} {factor.result.imag >= 0 ? '+' : ''} {factor.result.imag.toFixed(3)}i</>
+                    ) : (
+                      <>Phase: {((Math.atan2(factor.imag, factor.real) * 180) / Math.PI).toFixed(1)}°</>
+                    )}
+                  </span>
+                </div>
               </div>
-              <canvas
-                ref={(el) => (canvasRefs.current[index] = el)}
-                width="280"
-                height="60"
-                className="w-full visualization-canvas rounded text-xs"
-              />
-              <div className="flex justify-between mt-2 text-xs text-text-secondary font-mono">
-                <span>Amp: {factor.amplitude.toFixed(3)}</span>
-                <span>
-                  {viewMode === "vector" ? (
-                    <>Result: {factor.result.real.toFixed(3)} {factor.result.imag >= 0 ? '+' : ''} {factor.result.imag.toFixed(3)}i</>
-                  ) : (
-                    <>Phase: {((Math.atan2(factor.imag, factor.real) * 180) / Math.PI).toFixed(1)}°</>
-                  )}
-                </span>
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
 

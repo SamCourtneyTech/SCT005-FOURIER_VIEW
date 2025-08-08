@@ -119,51 +119,53 @@ export function SummationSection({
       </div>
 
       <div className="flex-1 overflow-hidden">
-        <div className="scroll-container overflow-y-auto space-y-2" style={{ maxHeight: 'calc(100vh - 300px)' }}>
-          {dftResults.slice(0, 4).map((result, k) => (
-            <div
-              key={k}
-              className={`bg-dark rounded-lg p-3 border-2 cursor-pointer hover:bg-gray-900 transition-colors ${
-                selectedFrequencyBin === k ? 'border-primary' : 'border-gray-700'
-              }`}
-              onClick={() => onSelectFrequencyBin(k)}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <span className={`text-sm font-mono font-bold ${
-                  selectedFrequencyBin === k ? 'text-primary' : 'text-accent'
-                }`}>
-                  X[{k}]
-                </span>
-                {selectedFrequencyBin === k && (
-                  <span className="text-xs text-success">Selected</span>
-                )}
+        <div className="scroll-container h-full overflow-x-auto overflow-y-hidden pb-1">
+          <div className="flex gap-3 h-full" style={{ minHeight: '200px' }}>
+            {dftResults.slice(0, 4).map((result, k) => (
+              <div
+                key={k}
+                className={`bg-dark rounded-lg p-3 border-2 cursor-pointer hover:bg-gray-900 transition-colors flex-shrink-0 w-72 ${
+                  selectedFrequencyBin === k ? 'border-primary' : 'border-gray-700'
+                }`}
+                onClick={() => onSelectFrequencyBin(k)}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className={`text-sm font-mono font-bold ${
+                    selectedFrequencyBin === k ? 'text-primary' : 'text-accent'
+                  }`}>
+                    X[{k}]
+                  </span>
+                  {selectedFrequencyBin === k && (
+                    <span className="text-xs text-success">Selected</span>
+                  )}
+                </div>
+                <div className="space-y-1">
+                  <div className="text-xs text-text-secondary font-mono">
+                    <span>Real: </span>
+                    <span className="text-white">{result.real.toFixed(3)}</span>
+                  </div>
+                  <div className="text-xs text-text-secondary font-mono">
+                    <span>Imag: </span>
+                    <span className="text-white">{result.imag.toFixed(3)}</span>
+                  </div>
+                  <div className="text-xs text-text-secondary font-mono">
+                    <span>Mag: </span>
+                    <span className="text-accent">{result.magnitude.toFixed(3)}</span>
+                  </div>
+                  <div className="text-xs text-text-secondary font-mono">
+                    <span>Phase: </span>
+                    <span className="text-warning">{result.phase.toFixed(1)}°</span>
+                  </div>
+                </div>
+                <canvas
+                  ref={(el) => (canvasRefs.current[k] = el)}
+                  width="280"
+                  height="40"
+                  className="w-full visualization-canvas rounded mt-2"
+                />
               </div>
-              <div className="space-y-1">
-                <div className="text-xs text-text-secondary font-mono">
-                  <span>Real: </span>
-                  <span className="text-white">{result.real.toFixed(3)}</span>
-                </div>
-                <div className="text-xs text-text-secondary font-mono">
-                  <span>Imag: </span>
-                  <span className="text-white">{result.imag.toFixed(3)}</span>
-                </div>
-                <div className="text-xs text-text-secondary font-mono">
-                  <span>Mag: </span>
-                  <span className="text-accent">{result.magnitude.toFixed(3)}</span>
-                </div>
-                <div className="text-xs text-text-secondary font-mono">
-                  <span>Phase: </span>
-                  <span className="text-warning">{result.phase.toFixed(1)}°</span>
-                </div>
-              </div>
-              <canvas
-                ref={(el) => (canvasRefs.current[k] = el)}
-                width="280"
-                height="40"
-                className="w-full visualization-canvas rounded mt-2"
-              />
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
 
