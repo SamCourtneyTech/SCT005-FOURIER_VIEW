@@ -30,6 +30,9 @@ export function DFTVisualizer() {
   const [sampleWindow, setSampleWindow] = useState(8);
   const [selectedFrequencyBin, setSelectedFrequencyBin] = useState(0);
   const [selectedExampleAudio, setSelectedExampleAudio] = useState<string>("");
+  const [viewMode, setViewMode] = useState<"vector" | "projection">("vector");
+  const [uploadedFileName, setUploadedFileName] = useState<string>("");
+  const [currentAudioSource, setCurrentAudioSource] = useState<"example" | "uploaded">("example");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -75,6 +78,8 @@ export function DFTVisualizer() {
   const handleUploadComplete = async (result: UploadResult<Record<string, unknown>, Record<string, unknown>>) => {
     if (result.successful && result.successful.length > 0) {
       const uploadURL = result.successful[0].uploadURL;
+      const fileName = result.successful[0].name || "Uploaded Audio";
+      
       if (uploadURL) {
         // Update audio file record in backend
         await fetch("/api/audio-files", {
@@ -84,13 +89,18 @@ export function DFTVisualizer() {
           },
           body: JSON.stringify({
             audioFileURL: uploadURL,
-            name: result.successful[0].name,
-            filename: result.successful[0].name,
+            name: fileName,
+            filename: fileName,
             fileSize: result.successful[0].size?.toString(),
             mimeType: result.successful[0].type,
           }),
           credentials: "include",
         });
+        
+        // Set uploaded file info and switch to uploaded audio
+        setUploadedFileName(fileName);
+        setCurrentAudioSource("uploaded");
+        setSelectedExampleAudio(""); // Clear example selection
         
         // Load the uploaded audio
         await loadAudioFile(uploadURL);
@@ -100,6 +110,7 @@ export function DFTVisualizer() {
 
   const handleExampleAudioChange = async (value: string) => {
     setSelectedExampleAudio(value);
+    setCurrentAudioSource("example");
     if (value) {
       await loadExampleAudio(value);
     }
@@ -132,6 +143,18 @@ export function DFTVisualizer() {
                 <span className="text-xs">(N={sampleWindow})</span>
               </div>
               
+              <div className="flex items-center space-x-2">
+                <span>View:</span>
+                <Select value={viewMode} onValueChange={(value: "vector" | "projection") => setViewMode(value)}>
+                  <SelectTrigger className="bg-gray-800 border-gray-600 text-white text-sm w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="vector">Vector View</SelectItem>
+                    <SelectItem value="projection">Projection View</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
             </div>
           </div>
@@ -152,9 +175,26 @@ export function DFTVisualizer() {
                 </div>
               </ObjectUploader>
 
+              {uploadedFileName && (
+                <div className="flex items-center space-x-2">
+                  <Button
+                    variant={currentAudioSource === "uploaded" ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => setCurrentAudioSource("uploaded")}
+                    className="text-xs px-3 py-1 max-w-[150px] truncate"
+                    title={uploadedFileName}
+                  >
+                    {uploadedFileName.length > 20 ? `${uploadedFileName.substring(0, 17)}...` : uploadedFileName}
+                  </Button>
+                </div>
+              )}
+
               <div className="text-text-secondary">or</div>
 
-              <Select value={selectedExampleAudio} onValueChange={handleExampleAudioChange}>
+              <Select 
+                value={currentAudioSource === "example" ? selectedExampleAudio : ""} 
+                onValueChange={handleExampleAudioChange}
+              >
                 <SelectTrigger className="bg-gray-800 border-gray-600 text-white text-sm w-48">
                   <SelectValue placeholder="Choose Example Audio" />
                 </SelectTrigger>
@@ -217,6 +257,7 @@ export function DFTVisualizer() {
           twiddleFactors={twiddleFactors}
           currentSample={currentSample}
           isPlaying={isPlaying}
+          viewMode={viewMode}
         />
 
         <SummationSection
@@ -225,6 +266,7 @@ export function DFTVisualizer() {
           onSelectFrequencyBin={setSelectedFrequencyBin}
           sampleWindow={sampleWindow}
           isPlaying={isPlaying}
+          viewMode={viewMode}
         />
 
         <SpectrumAnalyzer

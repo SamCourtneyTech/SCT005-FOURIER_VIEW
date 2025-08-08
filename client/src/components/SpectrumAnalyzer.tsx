@@ -69,24 +69,18 @@ export function SpectrumAnalyzer({
       const logMaxFreq = Math.log2(maxFreq);
       const logRange = logMaxFreq - logMinFreq;
 
-      // Draw frequency labels
-      ctx.fillStyle = '#888';
-      ctx.font = '10px sans-serif';
-      ctx.textAlign = 'center';
-      
+      // Draw frequency markers (vertical lines only, no labels)
       const freqLabels = [20, 100, 1000, 10000, 20000];
       freqLabels.forEach(freq => {
         const logFreq = Math.log2(freq);
         const x = ((logFreq - logMinFreq) / logRange) * canvas.width;
-        
-        ctx.fillText(freq >= 1000 ? `${freq/1000}k` : `${freq}`, x, canvas.height - 5);
         
         // Draw vertical lines for frequency markers
         ctx.strokeStyle = '#444';
         ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.moveTo(x, 0);
-        ctx.lineTo(x, canvas.height - 15);
+        ctx.lineTo(x, canvas.height);
         ctx.stroke();
       });
 
@@ -104,7 +98,7 @@ export function SpectrumAnalyzer({
         const x = ((logFreq - logMinFreq) / logRange) * canvas.width;
         
         const value = dataArray[i];
-        const y = canvas.height - 20 - ((value / 255) * (canvas.height - 25));
+        const y = canvas.height - ((value / 255) * canvas.height);
 
         if (firstPoint) {
           ctx.moveTo(x, y);

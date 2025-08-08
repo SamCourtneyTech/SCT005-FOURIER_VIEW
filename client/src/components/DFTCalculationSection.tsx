@@ -7,6 +7,7 @@ interface DFTCalculationSectionProps {
   twiddleFactors: { real: number; imag: number; amplitude: number; result: { real: number; imag: number } }[];
   currentSample: number;
   isPlaying?: boolean;
+  viewMode: "vector" | "projection";
 }
 
 export function DFTCalculationSection({
@@ -16,6 +17,7 @@ export function DFTCalculationSection({
   twiddleFactors,
   currentSample,
   isPlaying = true,
+  viewMode,
 }: DFTCalculationSectionProps) {
   const canvasRefs = useRef<(HTMLCanvasElement | null)[]>([]);
 
@@ -107,7 +109,7 @@ export function DFTCalculationSection({
       </div>
 
       <div className="flex-1 overflow-hidden">
-        <div className="scroll-container h-full overflow-y-auto space-y-2">
+        <div className="scroll-container h-full overflow-y-auto space-y-2" style={{ maxHeight: 'calc(100vh - 300px)' }}>
           {twiddleFactors.map((factor, index) => (
             <div key={index} className="bg-dark rounded-lg p-3 border border-gray-700">
               <div className="flex items-center justify-between mb-2">
@@ -125,7 +127,11 @@ export function DFTCalculationSection({
               <div className="flex justify-between mt-2 text-xs text-text-secondary font-mono">
                 <span>Amp: {factor.amplitude.toFixed(3)}</span>
                 <span>
-                  Result: {factor.result.real.toFixed(3)} {factor.result.imag >= 0 ? '+' : ''} {factor.result.imag.toFixed(3)}i
+                  {viewMode === "vector" ? (
+                    <>Result: {factor.result.real.toFixed(3)} {factor.result.imag >= 0 ? '+' : ''} {factor.result.imag.toFixed(3)}i</>
+                  ) : (
+                    <>Phase: {((Math.atan2(factor.imag, factor.real) * 180) / Math.PI).toFixed(1)}°</>
+                  )}
                 </span>
               </div>
             </div>
