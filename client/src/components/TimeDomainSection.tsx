@@ -148,6 +148,7 @@ export function TimeDomainSection({
       }
     };
 
+    // Always draw at least once, and continue if playing
     draw();
 
     return () => {
@@ -156,6 +157,135 @@ export function TimeDomainSection({
       }
     };
   }, [analyserNode, isPlaying, sampleWindow, timeData]);
+
+  // Additional effect to redraw when paused but dependencies change
+  useEffect(() => {
+    if (!isPlaying) {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      // Set canvas size
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+
+      // Clear canvas
+      ctx.fillStyle = '#1a1a1a';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Draw grid
+      ctx.strokeStyle = '#333';
+      ctx.lineWidth = 1;
+      const gridSpacing = canvas.width / sampleWindow;
+      
+      // Draw vertical grid lines for each sample (n markings)
+      for (let i = 0; i <= sampleWindow; i++) {
+        const x = i * gridSpacing;
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+      }
+      
+      // Draw horizontal grid lines
+      for (let i = 0; i < canvas.height; i += 20) {
+        ctx.beginPath();
+        ctx.moveTo(0, i);
+        ctx.lineTo(canvas.width, i);
+        ctx.stroke();
+      }
+
+      // Draw n markings on x-axis - show quarter/center/3-quarter for larger windows
+      ctx.fillStyle = '#666';
+      ctx.font = '10px Roboto Mono';
+      ctx.textAlign = 'center';
+      
+      if (sampleWindow <= 8) {
+        // Show all n values for small windows
+        for (let i = 0; i < sampleWindow; i++) {
+          const x = (i + 0.5) * gridSpacing;
+          ctx.fillText(`n=${i}`, x, canvas.height - 5);
+        }
+      } else {
+        // Show quarter, center, 3-quarter for larger windows
+        const quarter = Math.floor(sampleWindow / 4);
+        const center = Math.floor(sampleWindow / 2);
+        const threeQuarter = Math.floor((3 * sampleWindow) / 4);
+        
+        const positions = [
+          { index: 0, label: 'n=0' },
+          { index: quarter, label: `n=${quarter}` },
+          { index: center, label: `n=${center}` },
+          { index: threeQuarter, label: `n=${threeQuarter}` }
+        ];
+        
+        positions.forEach(({ index, label }) => {
+          const x = (index + 0.5) * gridSpacing;
+          ctx.fillText(label, x, canvas.height - 5);
+        });
+      }
+
+      // Draw magnitude labels (-1, 0, 1)
+      ctx.fillStyle = '#888';
+      ctx.font = '10px Roboto';
+      ctx.textAlign = 'right';
+      const centerY = canvas.height / 2;
+      ctx.fillText('1', canvas.width - 5, 15);    // Top
+      ctx.fillText('0', canvas.width - 5, centerY + 3); // Center
+      ctx.fillText('-1', canvas.width - 5, canvas.height - 5); // Bottom
+
+      // Draw Y-axis label
+      ctx.save();
+      ctx.translate(15, canvas.height / 2);
+      ctx.rotate(-Math.PI / 2);
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#888';
+      ctx.font = '12px Roboto';
+      ctx.fillText('Magnitude', 0, 0);
+      ctx.restore();
+
+      // Draw center line at y=0
+      ctx.strokeStyle = '#444';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(0, canvas.height / 2);
+      ctx.lineTo(canvas.width, canvas.height / 2);
+      ctx.stroke();
+
+      // Draw waveform using timeData scaled to sample window with bars from center
+      if (timeData && timeData.length >= sampleWindow) {
+        const sliceWidth = canvas.width / sampleWindow;
+        const centerY = canvas.height / 2;
+        const barWidth = sliceWidth * 0.8; // Leave some spacing between bars
+
+        for (let i = 0; i < sampleWindow; i++) {
+          const amplitude = timeData[i] || 0;
+          // Scale amplitude to canvas coordinates (-1 to 1 maps to full height)
+          const barHeight = (amplitude * centerY);
+          
+          const x = i * sliceWidth + (sliceWidth - barWidth) / 2;
+          
+          // Draw bars extending from center
+          ctx.fillStyle = '#1976D2';
+          if (barHeight >= 0) {
+            // Positive amplitude - bar goes up from center
+            ctx.fillRect(x, centerY - barHeight, barWidth, barHeight);
+          } else {
+            // Negative amplitude - bar goes down from center
+            ctx.fillRect(x, centerY, barWidth, -barHeight);
+          }
+
+          // Draw sample points at the tip of each bar
+          ctx.fillStyle = '#FFD700';
+          ctx.beginPath();
+          ctx.arc(x + barWidth / 2, centerY - barHeight, 2, 0, 2 * Math.PI);
+          ctx.fill();
+        }
+      }
+    }
+  }, [sampleWindow, timeData, isPlaying]);
 
   return (
     <div className="bg-surface border-r border-gray-700 p-4 flex flex-col">
