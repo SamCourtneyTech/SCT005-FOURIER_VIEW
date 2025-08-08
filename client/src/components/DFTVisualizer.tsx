@@ -267,31 +267,29 @@ export function DFTVisualizer() {
           />
         </div>
 
-        {/* Sections 3 and 4 with horizontal scroll on mobile */}
-        <div className="h-64 md:contents md:h-auto">
-          <div className="flex md:contents overflow-x-auto md:overflow-x-visible gap-2 md:gap-0 h-full pb-1">
-            <div className="w-80 md:w-auto md:min-w-0 flex-shrink-0 h-full">
-              <SummationSection
-                dftResults={dftResults}
-                selectedFrequencyBin={selectedFrequencyBin}
-                onSelectFrequencyBin={setSelectedFrequencyBin}
-                sampleWindow={sampleWindow}
-                isPlaying={isPlaying}
-                viewMode={viewMode}
-              />
-            </div>
-            <div className="w-80 md:w-auto md:min-w-0 flex-shrink-0 h-full">
-              <SpectrumAnalyzer
-                analyserNode={analyserNode}
-                peakFrequency={peakFrequency}
-                peakMagnitude={peakMagnitude}
-                frequencyResolution={frequencyResolution}
-                isPlaying={isPlaying}
-                sampleWindow={sampleWindow}
-                dftResults={dftResults}
-              />
-            </div>
-          </div>
+        {/* Summation section - mobile row 3 */}
+        <div className="h-64 md:h-auto md:flex-none">
+          <SummationSection
+            dftResults={dftResults}
+            selectedFrequencyBin={selectedFrequencyBin}
+            onSelectFrequencyBin={setSelectedFrequencyBin}
+            sampleWindow={sampleWindow}
+            isPlaying={isPlaying}
+            viewMode={viewMode}
+          />
+        </div>
+
+        {/* Spectrum Analyzer section - mobile row 4 */}
+        <div className="h-64 md:h-auto md:flex-none">
+          <SpectrumAnalyzer
+            analyserNode={analyserNode}
+            peakFrequency={peakFrequency}
+            peakMagnitude={peakMagnitude}
+            frequencyResolution={frequencyResolution}
+            isPlaying={isPlaying}
+            sampleWindow={sampleWindow}
+            dftResults={dftResults}
+          />
         </div>
       </main>
     </div>
