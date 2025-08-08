@@ -59,30 +59,62 @@ export function SpectrumAnalyzer({
         ctx.stroke();
       }
 
-      // Draw spectrum
-      const barWidth = canvas.width / bufferLength;
-      let x = 0;
+      // Draw frequency spectrum with logarithmic frequency scale
+      const sampleRate = analyserNode.context.sampleRate;
+      const maxFreq = 20000; // 20kHz max
+      const minFreq = 20; // 20Hz min
+      
+      // Create logarithmic frequency mapping
+      const logMinFreq = Math.log2(minFreq);
+      const logMaxFreq = Math.log2(maxFreq);
+      const logRange = logMaxFreq - logMinFreq;
 
-      for (let i = 0; i < bufferLength; i++) {
-        let barHeight = dataArray[i];
+      // Draw frequency labels
+      ctx.fillStyle = '#888';
+      ctx.font = '10px sans-serif';
+      ctx.textAlign = 'center';
+      
+      const freqLabels = [20, 100, 1000, 10000, 20000];
+      freqLabels.forEach(freq => {
+        const logFreq = Math.log2(freq);
+        const x = ((logFreq - logMinFreq) / logRange) * canvas.width;
         
-        if (isLogScale && barHeight > 0) {
-          barHeight = Math.log10(barHeight / 255) * 100 + canvas.height;
+        ctx.fillText(freq >= 1000 ? `${freq/1000}k` : `${freq}`, x, canvas.height - 5);
+        
+        // Draw vertical lines for frequency markers
+        ctx.strokeStyle = '#444';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height - 15);
+        ctx.stroke();
+      });
+
+      // Draw spectrum bars
+      ctx.strokeStyle = '#00ff88';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+
+      let firstPoint = true;
+      for (let i = 1; i < bufferLength; i++) {
+        const freq = (i * sampleRate) / (2 * bufferLength);
+        if (freq < minFreq || freq > maxFreq) continue;
+
+        const logFreq = Math.log2(freq);
+        const x = ((logFreq - logMinFreq) / logRange) * canvas.width;
+        
+        const value = dataArray[i];
+        const y = canvas.height - 20 - ((value / 255) * (canvas.height - 25));
+
+        if (firstPoint) {
+          ctx.moveTo(x, y);
+          firstPoint = false;
         } else {
-          barHeight = (barHeight / 255) * canvas.height;
+          ctx.lineTo(x, y);
         }
-
-        // Create gradient for spectrum bars
-        const gradient = ctx.createLinearGradient(0, canvas.height - barHeight, 0, canvas.height);
-        gradient.addColorStop(0, '#1976D2');
-        gradient.addColorStop(0.5, '#FF5722');
-        gradient.addColorStop(1, '#4CAF50');
-
-        ctx.fillStyle = gradient;
-        ctx.fillRect(x, canvas.height - barHeight, barWidth - 1, barHeight);
-
-        x += barWidth;
       }
+      
+      ctx.stroke();
 
       if (isPlaying) {
         animationRef.current = requestAnimationFrame(draw);

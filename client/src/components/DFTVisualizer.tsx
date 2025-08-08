@@ -117,7 +117,7 @@ export function DFTVisualizer() {
       <header className="bg-surface border-b border-gray-700 px-6 py-4 sticky top-0 z-50">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <h1 className="text-2xl font-bold text-primary">DFT Visualizer</h1>
+
             <div className="flex items-center space-x-4 text-text-secondary text-sm">
               <div className="flex items-center space-x-2">
                 <span>Sample Window:</span>

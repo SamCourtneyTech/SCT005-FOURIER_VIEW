@@ -34,7 +34,7 @@ export function useAudioProcessor() {
     }
   }, [audioContext]);
 
-  // Load audio file from URL
+  // Load audio file from URL with better M4A support
   const loadAudioFile = useCallback(async (url: string) => {
     await initializeAudioContext();
     if (!audioContext) return;
@@ -42,7 +42,12 @@ export function useAudioProcessor() {
     try {
       const response = await fetch(url);
       const arrayBuffer = await response.arrayBuffer();
-      const decodedBuffer = await audioContext.decodeAudioData(arrayBuffer);
+      
+      // Try to decode audio data with better error handling for M4A
+      const decodedBuffer = await audioContext.decodeAudioData(arrayBuffer).catch((error) => {
+        console.error('Audio decoding error:', error);
+        throw new Error('Audio format not supported by browser. M4A files may not work in all browsers. Try MP3, WAV, or OGG.');
+      });
       
       setAudioBuffer(decodedBuffer);
       setDuration(decodedBuffer.duration);
@@ -51,6 +56,8 @@ export function useAudioProcessor() {
       pauseTimeRef.current = 0;
     } catch (error) {
       console.error('Error loading audio file:', error);
+      // Show user-friendly error for unsupported formats
+      alert('Could not load audio file. M4A files may not be supported by your browser. Please try MP3, WAV, or OGG format.');
     }
   }, [audioContext, initializeAudioContext]);
 
