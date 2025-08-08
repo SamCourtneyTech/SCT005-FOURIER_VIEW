@@ -254,20 +254,22 @@ export function DFTVisualizer() {
           />
         </div>
 
-        {/* Middle sections with horizontal scroll on mobile */}
+        {/* DFT Calculation section - mobile row 2 */}
+        <div className="h-64 md:h-auto md:flex-none">
+          <DFTCalculationSection
+            sampleWindow={sampleWindow}
+            selectedFrequencyBin={selectedFrequencyBin}
+            timeData={timeData}
+            twiddleFactors={twiddleFactors}
+            currentSample={currentSample}
+            isPlaying={isPlaying}
+            viewMode={viewMode}
+          />
+        </div>
+
+        {/* Sections 3 and 4 with horizontal scroll on mobile */}
         <div className="h-64 md:contents md:h-auto">
           <div className="flex md:contents overflow-x-auto md:overflow-x-visible gap-2 md:gap-0 h-full pb-1">
-            <div className="w-80 md:w-auto md:min-w-0 flex-shrink-0 h-full">
-              <DFTCalculationSection
-                sampleWindow={sampleWindow}
-                selectedFrequencyBin={selectedFrequencyBin}
-                timeData={timeData}
-                twiddleFactors={twiddleFactors}
-                currentSample={currentSample}
-                isPlaying={isPlaying}
-                viewMode={viewMode}
-              />
-            </div>
             <div className="w-80 md:w-auto md:min-w-0 flex-shrink-0 h-full">
               <SummationSection
                 dftResults={dftResults}
@@ -278,19 +280,18 @@ export function DFTVisualizer() {
                 viewMode={viewMode}
               />
             </div>
+            <div className="w-80 md:w-auto md:min-w-0 flex-shrink-0 h-full">
+              <SpectrumAnalyzer
+                analyserNode={analyserNode}
+                peakFrequency={peakFrequency}
+                peakMagnitude={peakMagnitude}
+                frequencyResolution={frequencyResolution}
+                isPlaying={isPlaying}
+                sampleWindow={sampleWindow}
+                dftResults={dftResults}
+              />
+            </div>
           </div>
-        </div>
-
-        <div className="h-40 md:h-auto md:flex-none">
-          <SpectrumAnalyzer
-            analyserNode={analyserNode}
-            peakFrequency={peakFrequency}
-            peakMagnitude={peakMagnitude}
-            frequencyResolution={frequencyResolution}
-            isPlaying={isPlaying}
-            sampleWindow={sampleWindow}
-            dftResults={dftResults}
-          />
         </div>
       </main>
     </div>
