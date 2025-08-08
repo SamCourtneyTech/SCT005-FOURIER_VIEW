@@ -126,33 +126,32 @@ export function DFTVisualizer() {
   return (
     <div className="bg-dark text-text-primary font-sans min-h-screen">
       {/* Header */}
-      <header className="bg-surface border-b border-gray-700 px-6 py-4 sticky top-0 z-50">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-
-            <div className="flex items-center space-x-4 text-text-secondary text-sm">
-              <div className="flex items-center space-x-2">
-                <span>Sample Window:</span>
+      <header className="bg-surface border-b border-gray-700 px-3 md:px-6 py-2 md:py-4 sticky top-0 z-50">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-0">
+          <div className="flex flex-wrap items-center gap-2 md:gap-4">
+            <div className="flex flex-wrap items-center gap-2 md:gap-4 text-text-secondary text-xs md:text-sm">
+              <div className="flex items-center gap-1 md:gap-2">
+                <span className="whitespace-nowrap">Sample Window:</span>
                 <Input
                   type="number"
                   value={sampleWindow}
                   onChange={(e) => setSampleWindow(Number(e.target.value))}
                   min="4"
                   max="64"
-                  className="bg-gray-800 border-gray-600 w-16 text-center text-white"
+                  className="bg-gray-800 border-gray-600 w-12 md:w-16 text-center text-white text-xs md:text-sm"
                 />
-                <span className="text-xs">(N={sampleWindow})</span>
+                <span className="text-xs whitespace-nowrap">(N={sampleWindow})</span>
               </div>
               
-              <div className="flex items-center space-x-2">
-                <span>View:</span>
+              <div className="flex items-center gap-1 md:gap-2">
+                <span className="whitespace-nowrap">View:</span>
                 <Select value={viewMode} onValueChange={(value: "vector" | "projection") => setViewMode(value)}>
-                  <SelectTrigger className="bg-gray-800 border-gray-600 text-white text-sm w-32">
+                  <SelectTrigger className="bg-gray-800 border-gray-600 text-white text-xs md:text-sm w-24 md:w-32">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="vector">Vector View</SelectItem>
-                    <SelectItem value="projection">Projection View</SelectItem>
+                    <SelectItem value="vector">Vector</SelectItem>
+                    <SelectItem value="projection">Projection</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -160,9 +159,9 @@ export function DFTVisualizer() {
             </div>
           </div>
 
-          <div className="flex items-center space-x-4">
+          <div className="flex flex-wrap items-center gap-2 md:gap-4">
             {/* Audio Upload Section */}
-            <div className="flex items-center space-x-3">
+            <div className="flex flex-wrap items-center gap-2 md:gap-3">
               <ObjectUploader
                 maxNumberOfFiles={1}
                 maxFileSize={50 * 1024 * 1024} // 50MB
@@ -242,8 +241,8 @@ export function DFTVisualizer() {
       </header>
 
       {/* Main Visualization Grid */}
-      <main className="flex flex-col md:grid md:grid-cols-4 gap-1 h-[calc(100vh-80px)]">
-        <div className="flex-1 md:flex-none min-h-0">
+      <main className="flex flex-col md:grid md:grid-cols-4 gap-1 md:gap-1 h-[calc(100vh-120px)] md:h-[calc(100vh-80px)]">
+        <div className="h-40 md:h-auto md:flex-none">
           <TimeDomainSection
             analyserNode={analyserNode}
             currentAmplitude={currentAmplitude}
@@ -256,9 +255,9 @@ export function DFTVisualizer() {
         </div>
 
         {/* Middle sections with horizontal scroll on mobile */}
-        <div className="flex-1 md:contents min-h-0">
-          <div className="flex md:contents overflow-x-auto md:overflow-x-visible gap-1 md:gap-0 h-full">
-            <div className="min-w-full md:min-w-0 flex-shrink-0 h-full">
+        <div className="h-64 md:contents md:h-auto">
+          <div className="flex md:contents overflow-x-auto md:overflow-x-visible gap-2 md:gap-0 h-full pb-1">
+            <div className="w-80 md:w-auto md:min-w-0 flex-shrink-0 h-full">
               <DFTCalculationSection
                 sampleWindow={sampleWindow}
                 selectedFrequencyBin={selectedFrequencyBin}
@@ -269,7 +268,7 @@ export function DFTVisualizer() {
                 viewMode={viewMode}
               />
             </div>
-            <div className="min-w-full md:min-w-0 flex-shrink-0 h-full">
+            <div className="w-80 md:w-auto md:min-w-0 flex-shrink-0 h-full">
               <SummationSection
                 dftResults={dftResults}
                 selectedFrequencyBin={selectedFrequencyBin}
@@ -282,7 +281,7 @@ export function DFTVisualizer() {
           </div>
         </div>
 
-        <div className="flex-1 md:flex-none min-h-0">
+        <div className="h-40 md:h-auto md:flex-none">
           <SpectrumAnalyzer
             analyserNode={analyserNode}
             peakFrequency={peakFrequency}
