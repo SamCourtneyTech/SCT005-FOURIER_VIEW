@@ -155,7 +155,7 @@ export function TimeDomainSection({
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [analyserNode, isPlaying]);
+  }, [analyserNode, isPlaying, sampleWindow, timeData]);
 
   return (
     <div className="bg-surface border-r border-gray-700 p-4 flex flex-col">
