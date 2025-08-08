@@ -58,6 +58,8 @@ export class MemStorage implements IStorage {
       ...insertAudioFile,
       id,
       objectPath: normalizedPath,
+      fileSize: insertAudioFile.fileSize || null,
+      mimeType: insertAudioFile.mimeType || null,
       uploadedAt: new Date(),
     };
     

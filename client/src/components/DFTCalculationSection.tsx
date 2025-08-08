@@ -6,6 +6,7 @@ interface DFTCalculationSectionProps {
   timeData: Float32Array | null;
   twiddleFactors: { real: number; imag: number; amplitude: number; result: { real: number; imag: number } }[];
   currentSample: number;
+  visualizationMode?: "continuous" | "freeze";
 }
 
 export function DFTCalculationSection({
@@ -14,6 +15,7 @@ export function DFTCalculationSection({
   timeData,
   twiddleFactors,
   currentSample,
+  visualizationMode = "continuous",
 }: DFTCalculationSectionProps) {
   const canvasRefs = useRef<(HTMLCanvasElement | null)[]>([]);
 

@@ -7,7 +7,7 @@ import { TimeDomainSection } from "./TimeDomainSection";
 import { DFTCalculationSection } from "./DFTCalculationSection";
 import { SummationSection } from "./SummationSection";
 import { SpectrumAnalyzer } from "./SpectrumAnalyzer";
-import { ObjectUploader } from "./ObjectUploader";
+import { ObjectUploader } from "@/components/ObjectUploader";
 import { useAudioProcessor } from "@/hooks/useAudioProcessor";
 import { useDFTCalculation } from "@/hooks/useDFTCalculation";
 import type { UploadResult } from "@uppy/core";
@@ -30,6 +30,7 @@ export function DFTVisualizer() {
   const [sampleWindow, setSampleWindow] = useState(8);
   const [selectedFrequencyBin, setSelectedFrequencyBin] = useState(0);
   const [selectedExampleAudio, setSelectedExampleAudio] = useState<string>("");
+  const [visualizationMode, setVisualizationMode] = useState<"continuous" | "freeze">("continuous");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const {
@@ -57,7 +58,7 @@ export function DFTVisualizer() {
     dftResults,
     twiddleFactors,
     currentSample,
-  } = useDFTCalculation(analyserNode, sampleWindow, selectedFrequencyBin);
+  } = useDFTCalculation(analyserNode, sampleWindow, selectedFrequencyBin, visualizationMode);
 
   const handleGetUploadParameters = async () => {
     const response = await fetch("/api/objects/upload", {
@@ -72,7 +73,7 @@ export function DFTVisualizer() {
   };
 
   const handleUploadComplete = async (result: UploadResult<Record<string, unknown>, Record<string, unknown>>) => {
-    if (result.successful.length > 0) {
+    if (result.successful && result.successful.length > 0) {
       const uploadURL = result.successful[0].uploadURL;
       if (uploadURL) {
         // Update audio file record in backend
@@ -117,17 +118,32 @@ export function DFTVisualizer() {
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <h1 className="text-2xl font-bold text-primary">DFT Visualizer</h1>
-            <div className="flex items-center space-x-2 text-text-secondary text-sm">
-              <span>Sample Window:</span>
-              <Input
-                type="number"
-                value={sampleWindow}
-                onChange={(e) => setSampleWindow(Number(e.target.value))}
-                min="4"
-                max="64"
-                className="bg-gray-800 border-gray-600 w-16 text-center text-white"
-              />
-              <span className="text-xs">(N={sampleWindow})</span>
+            <div className="flex items-center space-x-4 text-text-secondary text-sm">
+              <div className="flex items-center space-x-2">
+                <span>Sample Window:</span>
+                <Input
+                  type="number"
+                  value={sampleWindow}
+                  onChange={(e) => setSampleWindow(Number(e.target.value))}
+                  min="4"
+                  max="64"
+                  className="bg-gray-800 border-gray-600 w-16 text-center text-white"
+                />
+                <span className="text-xs">(N={sampleWindow})</span>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <span>Mode:</span>
+                <Select value={visualizationMode} onValueChange={(value: "continuous" | "freeze") => setVisualizationMode(value)}>
+                  <SelectTrigger className="bg-gray-800 border-gray-600 text-white text-sm w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="continuous">Continuous</SelectItem>
+                    <SelectItem value="freeze">Freeze</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
 
@@ -210,6 +226,7 @@ export function DFTVisualizer() {
           timeData={timeData}
           twiddleFactors={twiddleFactors}
           currentSample={currentSample}
+          visualizationMode={visualizationMode}
         />
 
         <SummationSection
@@ -217,6 +234,7 @@ export function DFTVisualizer() {
           selectedFrequencyBin={selectedFrequencyBin}
           onSelectFrequencyBin={setSelectedFrequencyBin}
           sampleWindow={sampleWindow}
+          visualizationMode={visualizationMode}
         />
 
         <SpectrumAnalyzer

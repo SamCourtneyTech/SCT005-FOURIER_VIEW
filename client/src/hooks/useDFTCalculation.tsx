@@ -18,13 +18,19 @@ interface TwiddleFactor {
 export function useDFTCalculation(
   analyserNode: AnalyserNode | null,
   sampleWindow: number,
-  selectedFrequencyBin: number
+  selectedFrequencyBin: number,
+  visualizationMode: "continuous" | "freeze"
 ) {
   const [timeData, setTimeData] = useState<Float32Array | null>(null);
   const [frequencyData, setFrequencyData] = useState<Uint8Array | null>(null);
   const [dftResults, setDftResults] = useState<DFTResult[]>([]);
   const [twiddleFactors, setTwiddleFactors] = useState<TwiddleFactor[]>([]);
   const [currentSample, setCurrentSample] = useState(0);
+  const [frozenData, setFrozenData] = useState<{
+    timeData: Float32Array | null;
+    dftResults: DFTResult[];
+    twiddleFactors: TwiddleFactor[];
+  } | null>(null);
 
   useEffect(() => {
     if (!analyserNode) return;
@@ -85,17 +91,47 @@ export function useDFTCalculation(
       // Update current sample for visualization
       setCurrentSample((prev) => (prev + 1) % sampleWindow);
 
-      requestAnimationFrame(updateDFT);
+      // In freeze mode, capture a snapshot when mode changes
+      if (visualizationMode === "freeze" && !frozenData) {
+        setFrozenData({
+          timeData: new Float32Array(windowData),
+          dftResults: [...results],
+          twiddleFactors: [...factors],
+        });
+      }
+
+      // Only continue animation in continuous mode
+      if (visualizationMode === "continuous") {
+        requestAnimationFrame(updateDFT);
+      }
     };
 
     updateDFT();
-  }, [analyserNode, sampleWindow, selectedFrequencyBin]);
+  }, [analyserNode, sampleWindow, selectedFrequencyBin, visualizationMode, frozenData]);
 
-  return {
+  // Clear frozen data when switching back to continuous mode
+  useEffect(() => {
+    if (visualizationMode === "continuous") {
+      setFrozenData(null);
+    }
+  }, [visualizationMode]);
+
+  // Return frozen data if in freeze mode, otherwise return live data
+  const currentData = visualizationMode === "freeze" && frozenData ? {
+    timeData: frozenData.timeData,
+    dftResults: frozenData.dftResults,
+    twiddleFactors: frozenData.twiddleFactors,
+  } : {
     timeData,
-    frequencyData,
     dftResults,
     twiddleFactors,
+  };
+
+  return {
+    timeData: currentData.timeData,
+    frequencyData,
+    dftResults: currentData.dftResults,
+    twiddleFactors: currentData.twiddleFactors,
     currentSample,
   };
 }

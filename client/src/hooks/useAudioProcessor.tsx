@@ -48,34 +48,93 @@ export function useAudioProcessor() {
       setDuration(decodedBuffer.duration);
       setCurrentTime(0);
       setPlaybackProgress(0);
-      setPauseTimeRef(0);
+      pauseTimeRef.current = 0;
     } catch (error) {
       console.error('Error loading audio file:', error);
     }
   }, [audioContext, initializeAudioContext]);
 
-  // Load example audio
+  // Generate example audio programmatically for demonstration
   const loadExampleAudio = useCallback(async (exampleType: string) => {
-    // In a real implementation, these would be actual audio file URLs
-    const exampleUrls: Record<string, string> = {
-      full_song: '/public-objects/audio/full_song.mp3',
-      drums: '/public-objects/audio/drums.mp3',
-      electronic_drums: '/public-objects/audio/electronic_drums.mp3',
-      vocal: '/public-objects/audio/vocal.mp3',
-      bass: '/public-objects/audio/bass.mp3',
-      synth: '/public-objects/audio/synth.mp3',
-      electric_guitar: '/public-objects/audio/electric_guitar.mp3',
-      piano: '/public-objects/audio/piano.mp3',
-      acoustic_guitar: '/public-objects/audio/acoustic_guitar.mp3',
-      edm_lead: '/public-objects/audio/edm_lead.mp3',
-      edm_bass: '/public-objects/audio/edm_bass.mp3',
-    };
+    await initializeAudioContext();
+    if (!audioContext) return;
 
-    const url = exampleUrls[exampleType];
-    if (url) {
-      await loadAudioFile(url);
+    const sampleRate = audioContext.sampleRate;
+    const duration = 3; // 3 seconds
+    const frameCount = sampleRate * duration;
+    
+    // Create an audio buffer
+    const buffer = audioContext.createBuffer(1, frameCount, sampleRate);
+    const channelData = buffer.getChannelData(0);
+
+    // Generate different types of audio based on selection
+    switch (exampleType) {
+      case 'full_song':
+        // Mix of frequencies for a "song-like" sound
+        for (let i = 0; i < frameCount; i++) {
+          const t = i / sampleRate;
+          channelData[i] = 
+            0.3 * Math.sin(2 * Math.PI * 440 * t) +  // A4
+            0.2 * Math.sin(2 * Math.PI * 554.37 * t) + // C#5
+            0.1 * Math.sin(2 * Math.PI * 659.25 * t) +  // E5
+            0.05 * Math.sin(2 * Math.PI * 220 * t);     // A3
+        }
+        break;
+      case 'drums':
+        // Percussive sound with noise bursts
+        for (let i = 0; i < frameCount; i++) {
+          const t = i / sampleRate;
+          const beat = Math.floor(t * 4) % 4;
+          const beatTime = (t * 4) % 1;
+          if (beatTime < 0.1) {
+            channelData[i] = (Math.random() - 0.5) * Math.exp(-beatTime * 20) * 0.8;
+          } else {
+            channelData[i] = 0;
+          }
+        }
+        break;
+      case 'bass':
+        // Low frequency bass line
+        for (let i = 0; i < frameCount; i++) {
+          const t = i / sampleRate;
+          channelData[i] = 0.6 * Math.sin(2 * Math.PI * 110 * t) * (1 + 0.3 * Math.sin(2 * Math.PI * 2 * t));
+        }
+        break;
+      case 'synth':
+        // Sawtooth wave for synth sound
+        for (let i = 0; i < frameCount; i++) {
+          const t = i / sampleRate;
+          const freq = 440 + 100 * Math.sin(2 * Math.PI * 0.5 * t); // Frequency modulation
+          channelData[i] = 0.4 * ((2 * (t * freq - Math.floor(t * freq + 0.5))));
+        }
+        break;
+      case 'piano':
+        // Piano-like attack and decay
+        for (let i = 0; i < frameCount; i++) {
+          const t = i / sampleRate;
+          const noteTime = t % 0.5; // New note every 0.5 seconds
+          const envelope = Math.exp(-noteTime * 3);
+          channelData[i] = envelope * 0.5 * (
+            Math.sin(2 * Math.PI * 440 * t) +
+            0.5 * Math.sin(2 * Math.PI * 880 * t) +
+            0.25 * Math.sin(2 * Math.PI * 1320 * t)
+          );
+        }
+        break;
+      default:
+        // Simple sine wave
+        for (let i = 0; i < frameCount; i++) {
+          const t = i / sampleRate;
+          channelData[i] = 0.5 * Math.sin(2 * Math.PI * 440 * t);
+        }
     }
-  }, [loadAudioFile]);
+
+    setAudioBuffer(buffer);
+    setDuration(buffer.duration);
+    setCurrentTime(0);
+    setPlaybackProgress(0);
+    pauseTimeRef.current = 0;
+  }, [audioContext, initializeAudioContext]);
 
   // Toggle play/pause
   const togglePlayPause = useCallback(async () => {
