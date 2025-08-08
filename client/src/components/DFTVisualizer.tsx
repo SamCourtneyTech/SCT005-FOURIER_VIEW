@@ -243,7 +243,7 @@ export function DFTVisualizer() {
       {/* Main Visualization Grid */}
       <main className="flex flex-col md:grid md:grid-cols-4 gap-0 md:gap-1 flex-1 overflow-y-auto md:overflow-y-hidden">
         {/* Section 1 - Time Domain (full height on mobile) */}
-        <div className="h-56 md:h-auto flex-shrink-0 mb-1 md:mb-0">
+        <div className="h-56 md:h-auto flex-shrink-0">
           <TimeDomainSection
             analyserNode={analyserNode}
             currentAmplitude={currentAmplitude}
