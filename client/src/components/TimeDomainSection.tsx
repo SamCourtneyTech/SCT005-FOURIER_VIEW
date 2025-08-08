@@ -60,45 +60,87 @@ export function TimeDomainSection({
         ctx.stroke();
       }
 
-      // Draw n markings on x-axis
+      // Draw n markings on x-axis - show quarter/center/3-quarter for larger windows
       ctx.fillStyle = '#666';
       ctx.font = '10px Roboto Mono';
       ctx.textAlign = 'center';
-      for (let i = 0; i < sampleWindow; i++) {
-        const x = (i + 0.5) * gridSpacing;
-        ctx.fillText(`n=${i}`, x, canvas.height - 5);
+      
+      if (sampleWindow <= 8) {
+        // Show all n values for small windows
+        for (let i = 0; i < sampleWindow; i++) {
+          const x = (i + 0.5) * gridSpacing;
+          ctx.fillText(`n=${i}`, x, canvas.height - 5);
+        }
+      } else {
+        // Show quarter, center, 3-quarter for larger windows
+        const quarter = Math.floor(sampleWindow / 4);
+        const center = Math.floor(sampleWindow / 2);
+        const threeQuarter = Math.floor((3 * sampleWindow) / 4);
+        
+        const positions = [0, quarter, center, threeQuarter, sampleWindow - 1];
+        positions.forEach(i => {
+          const x = (i + 0.5) * gridSpacing;
+          ctx.fillText(`n=${i}`, x, canvas.height - 5);
+        });
       }
 
-      // Draw waveform using timeData scaled to sample window
-      if (timeData && timeData.length >= sampleWindow) {
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = '#1976D2';
-        ctx.beginPath();
+      // Draw y-axis magnitude labels
+      ctx.textAlign = 'right';
+      ctx.fillStyle = '#666';
+      ctx.font = '10px Roboto Mono';
+      ctx.fillText('1.0', 15, 15);
+      ctx.fillText('0.5', 15, canvas.height / 4 + 5);
+      ctx.fillText('0.0', 15, canvas.height / 2 + 5);
+      ctx.fillText('-0.5', 15, (3 * canvas.height) / 4 + 5);
+      ctx.fillText('-1.0', 15, canvas.height - 5);
+      
+      // Draw "Magnitude" label on y-axis
+      ctx.save();
+      ctx.translate(10, canvas.height / 2);
+      ctx.rotate(-Math.PI / 2);
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#888';
+      ctx.font = '12px Roboto';
+      ctx.fillText('Magnitude', 0, 0);
+      ctx.restore();
 
+      // Draw center line at y=0
+      ctx.strokeStyle = '#444';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(0, canvas.height / 2);
+      ctx.lineTo(canvas.width, canvas.height / 2);
+      ctx.stroke();
+
+      // Draw waveform using timeData scaled to sample window with bars from center
+      if (timeData && timeData.length >= sampleWindow) {
         const sliceWidth = canvas.width / sampleWindow;
-        let x = 0;
+        const centerY = canvas.height / 2;
+        const barWidth = sliceWidth * 0.8; // Leave some spacing between bars
 
         for (let i = 0; i < sampleWindow; i++) {
           const amplitude = timeData[i] || 0;
-          const normalizedAmplitude = (amplitude + 1) / 2; // Convert from -1,1 to 0,1
-          const y = canvas.height - (normalizedAmplitude * canvas.height);
-
-          if (i === 0) {
-            ctx.moveTo(x + sliceWidth / 2, y);
+          // Scale amplitude to canvas coordinates (-1 to 1 maps to full height)
+          const barHeight = (amplitude * centerY);
+          
+          const x = i * sliceWidth + (sliceWidth - barWidth) / 2;
+          
+          // Draw bars extending from center
+          ctx.fillStyle = '#1976D2';
+          if (barHeight >= 0) {
+            // Positive amplitude - bar goes up from center
+            ctx.fillRect(x, centerY - barHeight, barWidth, barHeight);
           } else {
-            ctx.lineTo(x + sliceWidth / 2, y);
+            // Negative amplitude - bar goes down from center
+            ctx.fillRect(x, centerY, barWidth, -barHeight);
           }
 
-          // Draw sample points
-          ctx.fillStyle = '#1976D2';
+          // Draw sample points at the tip of each bar
+          ctx.fillStyle = '#FFD700';
           ctx.beginPath();
-          ctx.arc(x + sliceWidth / 2, y, 3, 0, 2 * Math.PI);
+          ctx.arc(x + barWidth / 2, centerY - barHeight, 2, 0, 2 * Math.PI);
           ctx.fill();
-
-          x += sliceWidth;
         }
-
-        ctx.stroke();
       }
 
       if (isPlaying) {

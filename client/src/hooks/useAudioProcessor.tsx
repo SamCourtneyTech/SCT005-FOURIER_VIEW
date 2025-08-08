@@ -10,6 +10,7 @@ export function useAudioProcessor() {
   const [duration, setDuration] = useState(0);
   const [playbackProgress, setPlaybackProgress] = useState(0);
   const [currentAmplitude, setCurrentAmplitude] = useState(0);
+  const [timeData, setTimeData] = useState<Float32Array | null>(null);
   const [dominantFreq, setDominantFreq] = useState(0);
   const [sampleRate, setSampleRate] = useState(44100);
   const [peakFrequency, setPeakFrequency] = useState(0);
@@ -216,6 +217,9 @@ export function useAudioProcessor() {
       
       analyserNode.getFloatTimeDomainData(dataArray);
       analyserNode.getByteFrequencyData(freqArray);
+      
+      // Update time domain data for visualization
+      setTimeData(dataArray);
 
       // Calculate RMS for amplitude
       let sum = 0;
@@ -258,6 +262,7 @@ export function useAudioProcessor() {
     duration,
     playbackProgress,
     currentAmplitude,
+    timeData,
     dominantFreq,
     sampleRate,
     peakFrequency,

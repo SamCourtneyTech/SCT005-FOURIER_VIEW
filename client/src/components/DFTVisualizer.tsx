@@ -44,6 +44,7 @@ export function DFTVisualizer() {
     duration,
     playbackProgress,
     currentAmplitude,
+    timeData: audioTimeData,
     dominantFreq,
     sampleRate,
     peakFrequency,
@@ -249,7 +250,7 @@ export function DFTVisualizer() {
           sampleRate={sampleRate}
           isPlaying={isPlaying}
           sampleWindow={sampleWindow}
-          timeData={timeData}
+          timeData={audioTimeData || timeData}
         />
 
         <DFTCalculationSection

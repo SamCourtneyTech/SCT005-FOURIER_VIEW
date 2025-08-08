@@ -62,13 +62,24 @@ export function SpectrumAnalyzer({
         ctx.stroke();
       }
 
-      // Draw frequency bin labels
+      // Draw frequency bin labels (k values)
       ctx.fillStyle = '#666';
       ctx.font = '10px Roboto Mono';
       ctx.textAlign = 'center';
       for (let i = 0; i < sampleWindow; i++) {
         const x = (i + 0.5) * gridSpacing;
-        ctx.fillText(`k=${i}`, x, canvas.height - 5);
+        ctx.fillText(`k=${i}`, x, canvas.height - 25);
+      }
+
+      // Draw frequency range labels under k values
+      ctx.fillStyle = '#888';
+      ctx.font = '8px Roboto Mono';
+      const frequencyRanges = ['20Hz', '100Hz', '1kHz', '10kHz', '20kHz'];
+      const maxDisplayRanges = Math.min(sampleWindow, frequencyRanges.length);
+      
+      for (let i = 0; i < maxDisplayRanges; i++) {
+        const x = (i + 0.5) * gridSpacing;
+        ctx.fillText(frequencyRanges[i], x, canvas.height - 5);
       }
 
       // Draw DFT results as frequency spectrum
@@ -82,15 +93,15 @@ export function SpectrumAnalyzer({
           const normalizedMagnitude = maxMagnitude > 0 ? magnitude / maxMagnitude : 0;
           
           const x = i * gridSpacing + (gridSpacing - barWidth) / 2;
-          const barHeight = normalizedMagnitude * (canvas.height - 20); // Leave space for labels
+          const barHeight = normalizedMagnitude * (canvas.height - 35); // Leave space for labels
           
-          ctx.fillRect(x, canvas.height - 20 - barHeight, barWidth, barHeight);
+          ctx.fillRect(x, canvas.height - 35 - barHeight, barWidth, barHeight);
           
           // Draw magnitude values
           ctx.fillStyle = '#AAA';
           ctx.font = '8px Roboto Mono';
           ctx.textAlign = 'center';
-          ctx.fillText(magnitude.toFixed(2), x + barWidth/2, canvas.height - 25 - barHeight);
+          ctx.fillText(magnitude.toFixed(2), x + barWidth/2, canvas.height - 40 - barHeight);
           ctx.fillStyle = '#FF5722';
         }
       }
