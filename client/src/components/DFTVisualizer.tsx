@@ -241,8 +241,9 @@ export function DFTVisualizer() {
       </header>
 
       {/* Main Visualization Grid */}
-      <main className="flex flex-col md:grid md:grid-cols-4 gap-1 md:gap-1 h-[calc(100vh-120px)] md:h-[calc(100vh-80px)]">
-        <div className="h-40 md:h-auto md:flex-none">
+      <main className="flex flex-col md:grid md:grid-cols-4 gap-1 md:gap-1 min-h-0">
+        {/* Section 1 - Time Domain (full height on mobile) */}
+        <div className="h-48 md:h-auto flex-shrink-0">
           <TimeDomainSection
             analyserNode={analyserNode}
             currentAmplitude={currentAmplitude}
@@ -254,33 +255,35 @@ export function DFTVisualizer() {
           />
         </div>
 
-        {/* DFT Calculation section - mobile row 2 */}
-        <div className="h-64 md:h-auto md:flex-none">
-          <DFTCalculationSection
-            sampleWindow={sampleWindow}
-            selectedFrequencyBin={selectedFrequencyBin}
-            timeData={timeData}
-            twiddleFactors={twiddleFactors}
-            currentSample={currentSample}
-            isPlaying={isPlaying}
-            viewMode={viewMode}
-          />
+        {/* Sections 2 & 3 - Horizontal scroll on mobile */}
+        <div className="h-64 md:contents flex-shrink-0">
+          <div className="flex md:contents overflow-x-auto md:overflow-x-visible gap-2 md:gap-0 h-full pb-1">
+            <div className="w-80 md:w-auto flex-shrink-0 h-full">
+              <DFTCalculationSection
+                sampleWindow={sampleWindow}
+                selectedFrequencyBin={selectedFrequencyBin}
+                timeData={timeData}
+                twiddleFactors={twiddleFactors}
+                currentSample={currentSample}
+                isPlaying={isPlaying}
+                viewMode={viewMode}
+              />
+            </div>
+            <div className="w-80 md:w-auto flex-shrink-0 h-full">
+              <SummationSection
+                dftResults={dftResults}
+                selectedFrequencyBin={selectedFrequencyBin}
+                onSelectFrequencyBin={setSelectedFrequencyBin}
+                sampleWindow={sampleWindow}
+                isPlaying={isPlaying}
+                viewMode={viewMode}
+              />
+            </div>
+          </div>
         </div>
 
-        {/* Summation section - mobile row 3 */}
-        <div className="h-64 md:h-auto md:flex-none">
-          <SummationSection
-            dftResults={dftResults}
-            selectedFrequencyBin={selectedFrequencyBin}
-            onSelectFrequencyBin={setSelectedFrequencyBin}
-            sampleWindow={sampleWindow}
-            isPlaying={isPlaying}
-            viewMode={viewMode}
-          />
-        </div>
-
-        {/* Spectrum Analyzer section - mobile row 4 */}
-        <div className="h-64 md:h-auto md:flex-none">
+        {/* Section 4 - Spectrum Analyzer (own row on mobile) */}
+        <div className="h-48 md:h-auto flex-shrink-0">
           <SpectrumAnalyzer
             analyserNode={analyserNode}
             peakFrequency={peakFrequency}
