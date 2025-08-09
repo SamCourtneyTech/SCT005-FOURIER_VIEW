@@ -120,12 +120,17 @@ export function SummationSection({
       </div>
 
       <div className="flex-1 overflow-hidden min-h-0 max-h-full">
-        <div className="scroll-container h-full max-h-full overflow-x-auto md:overflow-y-auto md:overflow-x-hidden overflow-y-hidden pb-1">
-          <div className="flex md:flex md:flex-col gap-3 md:gap-2" style={{ minHeight: 'min-content' }}>
-            {dftResults.slice(0, Math.min(64, sampleWindow)).map((result, k) => (
+        <div className="scroll-container h-full max-h-full overflow-x-auto overflow-y-hidden pb-1">
+          <div className="flex gap-3" style={{ minHeight: 'min-content' }}>
+            {(dftResults.length > 0 ? dftResults.slice(0, Math.min(64, sampleWindow)) : Array.from({ length: Math.min(8, sampleWindow) }, (_, k) => ({
+              real: 0,
+              imag: 0,
+              magnitude: 0,
+              phase: 0
+            }))).map((result, k) => (
               <div
                 key={k}
-                className={`bg-dark rounded-lg p-3 border-2 cursor-pointer hover:bg-gray-900 transition-colors flex-shrink-0 w-72 md:w-auto ${
+                className={`bg-dark rounded-lg p-3 border-2 cursor-pointer hover:bg-gray-900 transition-colors flex-shrink-0 w-72 ${
                   selectedFrequencyBin === k ? 'border-primary' : 'border-gray-700'
                 }`}
                 onClick={() => onSelectFrequencyBin(k)}

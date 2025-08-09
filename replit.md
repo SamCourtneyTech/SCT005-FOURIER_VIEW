@@ -7,6 +7,8 @@ The core functionality includes audio file upload and playback, real-time audio 
 # User Preferences
 
 Preferred communication style: Simple, everyday language.
+Layout preference: Unified vertical layout for both desktop and mobile (amplitude → inner functions → X[k] → frequency domain).
+Visualization preference: Show empty visualizations on launch instead of grey sections until audio plays.
 
 # System Architecture
 
@@ -15,6 +17,9 @@ Preferred communication style: Simple, everyday language.
 The frontend is built using React with TypeScript, utilizing a component-based architecture with modern React patterns including hooks for state management and custom hooks for complex audio processing logic. The UI is styled using Tailwind CSS with shadcn/ui components providing a consistent design system.
 
 Key architectural decisions include:
+- **Unified Vertical Layout**: Single-column vertical layout for both desktop and mobile (Jan 2025) - amplitude over time → inner functions → X[k] summation → frequency domain
+- **Empty State Visualizations**: Show visualization containers with empty canvases on launch instead of grey sections (Jan 2025)
+- **Horizontal Scrolling Pattern**: Inner functions and X[k] sections show 3 items at once with horizontal scrolling for remaining items
 - **Web Audio API Integration**: Direct browser audio processing for real-time analysis without server dependencies
 - **Canvas-based Visualizations**: Custom canvas components for rendering time-domain, frequency-domain, and DFT calculation visualizations
 - **Custom Hooks Pattern**: Separation of audio processing logic (`useAudioProcessor`) and DFT calculation logic (`useDFTCalculation`) into reusable hooks

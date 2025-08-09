@@ -109,10 +109,15 @@ export function DFTCalculationSection({
       </div>
 
       <div className="flex-1 overflow-hidden min-h-0 max-h-full">
-        <div className="scroll-container h-full max-h-full overflow-x-auto md:overflow-y-auto md:overflow-x-hidden overflow-y-hidden pb-1">
-          <div className="flex md:grid md:grid-cols-1 gap-3 md:gap-2" style={{ minHeight: 'min-content' }}>
-            {twiddleFactors.map((factor, index) => (
-              <div key={index} className="bg-dark rounded-lg p-3 border border-gray-700 flex-shrink-0 w-72 md:w-auto">{/*Mobile: horizontal scroll, Desktop: 2-col grid*/}
+        <div className="scroll-container h-full max-h-full overflow-x-auto overflow-y-hidden pb-1">
+          <div className="flex gap-3" style={{ minHeight: 'min-content' }}>
+            {(twiddleFactors.length > 0 ? twiddleFactors : Array.from({ length: Math.min(8, sampleWindow) }, (_, index) => ({
+              real: 0,
+              imag: 0,
+              amplitude: 0,
+              result: { real: 0, imag: 0 }
+            }))).map((factor, index) => (
+              <div key={index} className="bg-dark rounded-lg p-3 border border-gray-700 flex-shrink-0 w-72">{/* Consistent horizontal scroll for all screen sizes */}
                 <div className="flex flex-col items-center mb-2">
                   <span className="text-sm font-mono text-accent">n = {index}</span>
                   <span className="text-xs text-text-secondary text-center">
