@@ -241,10 +241,26 @@ export function DFTVisualizer() {
         </div>
       </header>
 
+      {/* Layout Toggle */}
+      <div className="bg-surface border-b border-gray-700 px-3 md:px-6 py-2">
+        <div className="flex items-center gap-2">
+          <span className="text-text-secondary text-sm">Layout:</span>
+          <Select value={viewMode === "vector" ? "horizontal" : "vertical"} onValueChange={(value) => setViewMode(value === "horizontal" ? "vector" : "projection")}>
+            <SelectTrigger className="bg-gray-800 border-gray-600 text-white text-sm w-32">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="horizontal">Horizontal</SelectItem>
+              <SelectItem value="vertical">Vertical</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
       {/* Main Visualization Grid */}
-      <main className="flex flex-col md:grid md:grid-cols-4 gap-0 md:gap-1 flex-1 overflow-y-auto md:overflow-y-hidden pb-4 md:pb-0">
-        {/* Section 1 - Time Domain (full height on mobile) */}
-        <div className="h-56 md:h-auto flex-shrink-0">
+      <main className={`flex-1 overflow-auto ${viewMode === "vector" ? "grid grid-cols-4 gap-1 p-1" : "flex flex-col gap-0"}`}>
+        {/* Section 1 - Time Domain */}
+        <div className={viewMode === "vector" ? "" : "h-56 flex-shrink-0"}>
           <TimeDomainSection
             analyserNode={analyserNode}
             currentAmplitude={currentAmplitude}
@@ -256,8 +272,8 @@ export function DFTVisualizer() {
           />
         </div>
 
-        {/* Section 2 - DFT Calculation (own row with horizontal scroll on mobile) */}
-        <div className="h-64 md:h-auto flex-shrink-0">
+        {/* Section 2 - DFT Calculation */}
+        <div className={viewMode === "vector" ? "" : "h-64 flex-shrink-0"}>
           <DFTCalculationSection
             sampleWindow={sampleWindow}
             selectedFrequencyBin={selectedFrequencyBin}
@@ -269,8 +285,8 @@ export function DFTVisualizer() {
           />
         </div>
 
-        {/* Section 3 - Summation (own row with horizontal scroll on mobile) */}
-        <div className="h-64 md:h-auto flex-shrink-0">
+        {/* Section 3 - Summation */}
+        <div className={viewMode === "vector" ? "" : "h-60 flex-shrink-0"}>
           <SummationSection
             dftResults={dftResults}
             selectedFrequencyBin={selectedFrequencyBin}
@@ -281,8 +297,8 @@ export function DFTVisualizer() {
           />
         </div>
 
-        {/* Section 4 - Spectrum Analyzer (own row on mobile) */}
-        <div className="h-48 md:h-auto flex-shrink-0">
+        {/* Section 4 - Spectrum Analyzer */}
+        <div className={viewMode === "vector" ? "" : "h-64 flex-shrink-0 pb-4"}>
           <SpectrumAnalyzer
             analyserNode={analyserNode}
             peakFrequency={peakFrequency}
