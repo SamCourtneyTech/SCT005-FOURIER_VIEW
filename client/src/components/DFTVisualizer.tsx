@@ -252,7 +252,7 @@ export function DFTVisualizer() {
             sampleRate={sampleRate}
             isPlaying={isPlaying}
             sampleWindow={sampleWindow}
-            timeData={audioTimeData || timeData}
+            timeData={timeData}
           />
         </div>
 
