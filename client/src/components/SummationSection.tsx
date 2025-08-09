@@ -27,7 +27,8 @@ export function SummationSection({
   const canvasRefs = useRef<(HTMLCanvasElement | null)[]>([]);
 
   useEffect(() => {
-    dftResults.forEach((result, index) => {
+    const visibleResults = dftResults.slice(0, Math.min(64, sampleWindow));
+    visibleResults.forEach((result, index) => {
       const canvas = canvasRefs.current[index];
       if (!canvas) return;
 
@@ -107,7 +108,7 @@ export function SummationSection({
       );
       ctx.fill();
     });
-  }, [dftResults, selectedFrequencyBin]);
+  }, [dftResults, selectedFrequencyBin, sampleWindow]);
 
   return (
     <div className="bg-surface border-r border-gray-700 p-4 flex flex-col h-full md:h-full">
@@ -121,7 +122,7 @@ export function SummationSection({
       <div className="flex-1 overflow-hidden">
         <div className="scroll-container h-full overflow-x-auto md:overflow-y-auto md:overflow-x-hidden overflow-y-hidden pb-1">
           <div className="flex md:flex md:flex-col gap-3 md:gap-2 h-full" style={{ minHeight: '200px' }}>
-            {dftResults.map((result, k) => (
+            {dftResults.slice(0, Math.min(64, sampleWindow)).map((result, k) => (
               <div
                 key={k}
                 className={`bg-dark rounded-lg p-3 border-2 cursor-pointer hover:bg-gray-900 transition-colors flex-shrink-0 w-72 md:w-auto ${

@@ -21,6 +21,7 @@ export function TimeDomainSection({
 }: TimeDomainSectionProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>();
+  const frozenDataRef = useRef<Float32Array | null>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -112,14 +113,22 @@ export function TimeDomainSection({
       ctx.lineTo(canvas.width, canvas.height / 2);
       ctx.stroke();
 
-      // Draw waveform using timeData scaled to sample window with bars from center
-      if (timeData && timeData.length >= sampleWindow) {
+      // Store current timeData when playing for freezing on pause
+      if (isPlaying && timeData && timeData.length >= sampleWindow) {
+        frozenDataRef.current = new Float32Array(timeData.slice(0, sampleWindow));
+      }
+
+      // Use frozen data when paused, live data when playing
+      const displayData = isPlaying ? timeData : frozenDataRef.current;
+
+      // Draw waveform using displayData scaled to sample window with bars from center
+      if (displayData && displayData.length >= sampleWindow) {
         const sliceWidth = canvas.width / sampleWindow;
         const centerY = canvas.height / 2;
         const barWidth = sliceWidth * 0.8; // Leave some spacing between bars
 
         for (let i = 0; i < sampleWindow; i++) {
-          const amplitude = timeData[i] || 0;
+          const amplitude = displayData[i] || 0;
           // Scale amplitude to canvas coordinates (-1 to 1 maps to full height)
           const barHeight = (amplitude * centerY);
           
