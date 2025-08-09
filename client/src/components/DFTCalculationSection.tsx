@@ -19,7 +19,6 @@ export function DFTCalculationSection({
   isPlaying = true,
   viewMode,
 }: DFTCalculationSectionProps) {
-  const isHorizontalLayout = viewMode === "vector";
   const canvasRefs = useRef<(HTMLCanvasElement | null)[]>([]);
 
   useEffect(() => {
@@ -110,10 +109,10 @@ export function DFTCalculationSection({
       </div>
 
       <div className="flex-1 overflow-hidden">
-        <div className={`scroll-container h-full ${isHorizontalLayout ? 'overflow-hidden' : 'overflow-x-auto overflow-y-hidden'} pb-1`}>
-          <div className={`${isHorizontalLayout ? 'grid grid-cols-2 gap-2 h-full' : 'flex gap-3 h-full'}`} style={{ minHeight: isHorizontalLayout ? 'auto' : '200px' }}>
+        <div className="scroll-container h-full overflow-x-auto md:overflow-hidden overflow-y-hidden pb-1">
+          <div className="flex md:grid md:grid-cols-2 gap-3 md:gap-2 h-full" style={{ minHeight: '200px' }}>
             {twiddleFactors.map((factor, index) => (
-              <div key={index} className={`bg-dark rounded-lg p-3 border border-gray-700 ${isHorizontalLayout ? '' : 'flex-shrink-0 w-72'}`}>
+              <div key={index} className="bg-dark rounded-lg p-3 border border-gray-700 flex-shrink-0 w-72 md:w-auto">{/*Mobile: horizontal scroll, Desktop: 2-col grid*/}
                 <div className="flex flex-col items-center mb-2">
                   <span className="text-sm font-mono text-accent">n = {index}</span>
                   <span className="text-xs text-text-secondary text-center">
