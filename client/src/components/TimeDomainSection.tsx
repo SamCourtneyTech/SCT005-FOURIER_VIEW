@@ -159,7 +159,7 @@ export function TimeDomainSection({
   }, [analyserNode, isPlaying, sampleWindow, timeData]);
 
   return (
-    <div className="bg-surface border-r border-gray-700 p-4 flex flex-col">
+    <div className="bg-surface border-r border-gray-700 p-4 flex flex-col h-full md:h-full">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-primary">Time Domain Signal</h2>
         <div className="text-xs text-text-secondary">x(t)</div>

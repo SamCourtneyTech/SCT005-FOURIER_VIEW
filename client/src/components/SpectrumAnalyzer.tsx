@@ -121,7 +121,7 @@ export function SpectrumAnalyzer({
   }, [analyserNode, dftResults, sampleWindow, isPlaying]);
 
   return (
-    <div className="bg-surface p-4 flex flex-col">
+    <div className="bg-surface p-4 flex flex-col h-full md:h-full">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-primary">Frequency Domain</h2>
         <div className="flex items-center space-x-2 text-xs text-text-secondary">
