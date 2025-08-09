@@ -53,10 +53,12 @@ export function useDFTCalculation(
         windowData[i] = timeArray[i] || 0;
       }
 
-      // Calculate DFT for all frequency bins
+      // Calculate DFT for frequency bins - limit to prevent lag on large N
+      const maxBins = Math.min(sampleWindow, 1024);
       const results: DFTResult[] = [];
-      for (let k = 0; k < sampleWindow; k++) {
-        const dftValue = calculateDFT(windowData, k);
+      
+      for (let k = 0; k < maxBins; k++) {
+        const dftValue = calculateDFT(windowData, k, maxBins);
         const magnitude = Math.sqrt(dftValue.real * dftValue.real + dftValue.imag * dftValue.imag);
         const phase = Math.atan2(dftValue.imag, dftValue.real) * (180 / Math.PI);
         
@@ -70,9 +72,12 @@ export function useDFTCalculation(
       setDftResults(results);
 
       // Calculate twiddle factors for the selected frequency bin
+      // Optimize for large sample windows by limiting calculations
+      const maxFactors = Math.min(sampleWindow, 1024);
       const factors: TwiddleFactor[] = [];
-      for (let n = 0; n < sampleWindow; n++) {
-        const amplitude = windowData[n];
+      
+      for (let n = 0; n < maxFactors; n++) {
+        const amplitude = windowData[n] || 0;
         const twiddle = getTwiddleFactor(sampleWindow, selectedFrequencyBin, n);
         const result = {
           real: amplitude * twiddle.real,

@@ -54,7 +54,9 @@ export function SummationSection({
   };
 
   useEffect(() => {
-    const visibleResults = dftResults.slice(0, Math.min(64, sampleWindow));
+    // Optimize for large sample windows by limiting rendered canvases
+    const maxVisibleCanvases = Math.min(dftResults.length, 256);
+    const visibleResults = dftResults.slice(0, maxVisibleCanvases);
     visibleResults.forEach((result, index) => {
       const canvas = canvasRefs.current[index];
       if (!canvas) return;
@@ -62,35 +64,43 @@ export function SummationSection({
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
 
-      // Set canvas size
-      canvas.width = 280;
-      canvas.height = 40;
+      // Set canvas size with device pixel ratio for crisp rendering
+      const dpr = window.devicePixelRatio || 1;
+      const displayWidth = 280;
+      const displayHeight = 40;
+      
+      canvas.width = displayWidth * dpr;
+      canvas.height = displayHeight * dpr;
+      canvas.style.width = displayWidth + 'px';
+      canvas.style.height = displayHeight + 'px';
+      
+      ctx.scale(dpr, dpr);
 
       // Clear canvas
       ctx.fillStyle = '#1a1a1a';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillRect(0, 0, displayWidth, displayHeight);
 
       // Draw grid
       ctx.strokeStyle = '#333';
       ctx.lineWidth = 1;
       
-      for (let i = 0; i < canvas.width; i += 20) {
+      for (let i = 0; i < displayWidth; i += 20) {
         ctx.beginPath();
         ctx.moveTo(i, 0);
-        ctx.lineTo(i, canvas.height);
+        ctx.lineTo(i, displayHeight);
         ctx.stroke();
       }
       
-      for (let i = 0; i < canvas.height; i += 20) {
+      for (let i = 0; i < displayHeight; i += 20) {
         ctx.beginPath();
         ctx.moveTo(0, i);
-        ctx.lineTo(canvas.width, i);
+        ctx.lineTo(displayWidth, i);
         ctx.stroke();
       }
 
       // Draw complex number visualization
-      const centerX = canvas.width / 2;
-      const centerY = canvas.height / 2;
+      const centerX = displayWidth / 2;
+      const centerY = displayHeight / 2;
       const scale = 15;
 
       // Draw axes
@@ -98,9 +108,9 @@ export function SummationSection({
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(0, centerY);
-      ctx.lineTo(canvas.width, centerY);
+      ctx.lineTo(displayWidth, centerY);
       ctx.moveTo(centerX, 0);
-      ctx.lineTo(centerX, canvas.height);
+      ctx.lineTo(centerX, displayHeight);
       ctx.stroke();
 
       // Draw complex number vector
@@ -149,7 +159,7 @@ export function SummationSection({
       <div className="flex-1 overflow-hidden min-h-0 max-h-full">
         <div ref={scrollContainerRef} className="scroll-container h-full max-h-full overflow-x-auto overflow-y-hidden pb-1">
           <div className="flex gap-3" style={{ minHeight: 'min-content' }}>
-            {(dftResults.length > 0 ? dftResults.slice(0, Math.min(2048, sampleWindow)) : Array.from({ length: sampleWindow }, (_, k) => ({
+            {(dftResults.length > 0 ? dftResults.slice(0, Math.min(256, sampleWindow)) : Array.from({ length: Math.min(sampleWindow, 256) }, (_, k) => ({
               real: 0,
               imag: 0,
               magnitude: 0,

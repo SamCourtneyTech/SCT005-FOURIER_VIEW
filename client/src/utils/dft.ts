@@ -14,15 +14,21 @@ export function getTwiddleFactor(N: number, k: number, n: number): Complex {
 }
 
 // Calculate DFT for a specific frequency bin k
-export function calculateDFT(signal: Float32Array, k: number): Complex {
-  const N = signal.length;
+export function calculateDFT(signal: Float32Array, k: number, maxN?: number): Complex {
+  const N = maxN || signal.length;
   let real = 0;
   let imag = 0;
 
-  for (let n = 0; n < N; n++) {
-    const twiddle = getTwiddleFactor(N, k, n);
-    real += signal[n] * twiddle.real;
-    imag += signal[n] * twiddle.imag;
+  // Optimize calculations by pre-computing the base angle
+  const baseAngle = -2 * Math.PI * k / N;
+  
+  for (let n = 0; n < Math.min(N, signal.length); n++) {
+    const angle = baseAngle * n;
+    const cosAngle = Math.cos(angle);
+    const sinAngle = Math.sin(angle);
+    
+    real += signal[n] * cosAngle;
+    imag += signal[n] * sinAngle;
   }
 
   return { real, imag };

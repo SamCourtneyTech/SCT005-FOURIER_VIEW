@@ -48,41 +48,51 @@ export function DFTCalculationSection({
   };
 
   useEffect(() => {
-    twiddleFactors.forEach((factor, index) => {
+    // Only render visible canvases to optimize performance for large sample windows
+    const maxVisibleCanvases = Math.min(twiddleFactors.length, 256);
+    twiddleFactors.slice(0, maxVisibleCanvases).forEach((factor, index) => {
       const canvas = canvasRefs.current[index];
       if (!canvas) return;
 
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
 
-      // Set canvas size
-      canvas.width = 280;
-      canvas.height = 60;
+      // Set canvas size with device pixel ratio for crisp rendering
+      const dpr = window.devicePixelRatio || 1;
+      const displayWidth = 280;
+      const displayHeight = 60;
+      
+      canvas.width = displayWidth * dpr;
+      canvas.height = displayHeight * dpr;
+      canvas.style.width = displayWidth + 'px';
+      canvas.style.height = displayHeight + 'px';
+      
+      ctx.scale(dpr, dpr);
 
       // Clear canvas
       ctx.fillStyle = '#1a1a1a';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillRect(0, 0, displayWidth, displayHeight);
 
       // Draw grid
       ctx.strokeStyle = '#333';
       ctx.lineWidth = 1;
       
-      for (let i = 0; i < canvas.width; i += 20) {
+      for (let i = 0; i < displayWidth; i += 20) {
         ctx.beginPath();
         ctx.moveTo(i, 0);
-        ctx.lineTo(i, canvas.height);
+        ctx.lineTo(i, displayHeight);
         ctx.stroke();
       }
       
-      for (let i = 0; i < canvas.height; i += 20) {
+      for (let i = 0; i < displayHeight; i += 20) {
         ctx.beginPath();
         ctx.moveTo(0, i);
-        ctx.lineTo(canvas.width, i);
+        ctx.lineTo(displayWidth, i);
         ctx.stroke();
       }
 
       // Draw amplitude visualization
-      const centerY = canvas.height / 2;
+      const centerY = displayHeight / 2;
       const amplitude = factor.amplitude;
       const maxAmplitude = 1.0;
       
@@ -119,9 +129,9 @@ export function DFTCalculationSection({
       // Draw labels
       ctx.fillStyle = '#FFFFFF';
       ctx.font = '10px Roboto Mono';
-      ctx.fillText('Amp', 10, canvas.height - 5);
-      ctx.fillText('W', vectorCenterX - 10, canvas.height - 5);
-      ctx.fillText('Result', vectorCenterX + 50, canvas.height - 5);
+      ctx.fillText('Amp', 10, displayHeight - 5);
+      ctx.fillText('W', vectorCenterX - 10, displayHeight - 5);
+      ctx.fillText('Result', vectorCenterX + 50, displayHeight - 5);
     });
   }, [twiddleFactors]);
 
@@ -137,7 +147,7 @@ export function DFTCalculationSection({
       <div className="flex-1 overflow-hidden min-h-0 max-h-full">
         <div ref={scrollContainerRef} className="scroll-container h-full max-h-full overflow-x-auto overflow-y-hidden pb-1">
           <div className="flex gap-3" style={{ minHeight: 'min-content' }}>
-            {(twiddleFactors.length > 0 ? twiddleFactors : Array.from({ length: sampleWindow }, (_, index) => ({
+            {(twiddleFactors.length > 0 ? twiddleFactors : Array.from({ length: Math.min(sampleWindow, 256) }, (_, index) => ({
               real: 0,
               imag: 0,
               amplitude: 0,
