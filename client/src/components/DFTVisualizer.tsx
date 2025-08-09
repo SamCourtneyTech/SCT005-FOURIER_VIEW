@@ -124,21 +124,14 @@ export function DFTVisualizer() {
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
-  // Load default audio on startup
+  // Load default audio on startup with proper dependency tracking
   useEffect(() => {
-    // Load the initially selected audio on mount - ensure audio context is ready for mobile
-    const initializeAudio = async () => {
-      if (selectedExampleAudio && currentAudioSource === "example") {
-        try {
-          await loadExampleAudio(selectedExampleAudio);
-        } catch (error) {
-          console.error('Failed to load initial audio:', error);
-        }
-      }
-    };
-    
-    initializeAudio();
-  }, []); // Empty dependency array - only run once on mount
+    // Load the initially selected audio when audio context becomes available
+    if (audioContext && selectedExampleAudio && currentAudioSource === "example" && duration === 0) {
+      console.log('Loading initial audio:', selectedExampleAudio);
+      loadExampleAudio(selectedExampleAudio);
+    }
+  }, [audioContext, selectedExampleAudio, currentAudioSource, duration, loadExampleAudio]);
 
   return (
     <div className="bg-dark text-text-primary font-sans min-h-screen flex flex-col">

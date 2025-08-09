@@ -74,8 +74,11 @@ export function useAudioProcessor() {
 
   // Generate example audio programmatically for demonstration
   const loadExampleAudio = useCallback(async (exampleType: string) => {
-    await initializeAudioContext();
-    if (!audioContext) return;
+    // Ensure audio context is initialized first, especially for mobile
+    if (!audioContext) {
+      await initializeAudioContext();
+      return; // Return and let the effect handle the loading once context is ready
+    }
 
     const sampleRate = audioContext.sampleRate;
     const duration = 3; // 3 seconds

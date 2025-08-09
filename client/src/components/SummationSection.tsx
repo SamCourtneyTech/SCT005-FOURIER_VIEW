@@ -119,9 +119,9 @@ export function SummationSection({
         </div>
       </div>
 
-      <div className="flex-1 overflow-hidden min-h-0">
-        <div className="scroll-container h-full overflow-x-auto md:overflow-y-auto md:overflow-x-hidden overflow-y-hidden pb-1">
-          <div className="flex md:flex md:flex-col gap-3 md:gap-2 h-full" style={{ minHeight: '200px' }}>
+      <div className="flex-1 overflow-hidden min-h-0 max-h-full">
+        <div className="scroll-container h-full max-h-full overflow-x-auto md:overflow-y-auto md:overflow-x-hidden overflow-y-hidden pb-1">
+          <div className="flex md:flex md:flex-col gap-3 md:gap-2" style={{ minHeight: 'min-content' }}>
             {dftResults.slice(0, Math.min(64, sampleWindow)).map((result, k) => (
               <div
                 key={k}

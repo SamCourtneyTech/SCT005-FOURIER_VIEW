@@ -108,9 +108,9 @@ export function DFTCalculationSection({
         </div>
       </div>
 
-      <div className="flex-1 overflow-hidden min-h-0">
-        <div className="scroll-container h-full overflow-x-auto md:overflow-y-auto md:overflow-x-hidden overflow-y-hidden pb-1">
-          <div className="flex md:grid md:grid-cols-1 gap-3 md:gap-2 h-full" style={{ minHeight: '200px' }}>
+      <div className="flex-1 overflow-hidden min-h-0 max-h-full">
+        <div className="scroll-container h-full max-h-full overflow-x-auto md:overflow-y-auto md:overflow-x-hidden overflow-y-hidden pb-1">
+          <div className="flex md:grid md:grid-cols-1 gap-3 md:gap-2" style={{ minHeight: 'min-content' }}>
             {twiddleFactors.map((factor, index) => (
               <div key={index} className="bg-dark rounded-lg p-3 border border-gray-700 flex-shrink-0 w-72 md:w-auto">{/*Mobile: horizontal scroll, Desktop: 2-col grid*/}
                 <div className="flex flex-col items-center mb-2">

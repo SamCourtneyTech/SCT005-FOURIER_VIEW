@@ -23,6 +23,7 @@ export function SpectrumAnalyzer({
   const [isLogScale, setIsLogScale] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>();
+  const frozenDftResultsRef = useRef<{ real: number; imag: number; magnitude: number; phase: number }[]>([]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -32,76 +33,89 @@ export function SpectrumAnalyzer({
     if (!ctx) return;
 
     const draw = () => {
-      // Set canvas size
-      canvas.width = canvas.offsetWidth;
-      canvas.height = canvas.offsetHeight;
+      // Set canvas size with device pixel ratio for HD quality
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.scale(dpr, dpr);
+      canvas.style.width = rect.width + 'px';
+      canvas.style.height = rect.height + 'px';
+
+      // Store current dftResults when playing for freezing on pause
+      if (isPlaying && dftResults && dftResults.length >= sampleWindow) {
+        frozenDftResultsRef.current = [...dftResults];
+      }
+
+      // Use frozen data when paused, live data when playing
+      const displayResults = isPlaying ? dftResults : frozenDftResultsRef.current;
 
       // Clear canvas
       ctx.fillStyle = '#1a1a1a';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillRect(0, 0, rect.width, rect.height);
 
       // Draw grid
       ctx.strokeStyle = '#333';
       ctx.lineWidth = 1;
-      const gridSpacing = canvas.width / sampleWindow;
+      const gridSpacing = rect.width / sampleWindow;
       
       // Draw vertical grid lines for each frequency bin
       for (let i = 0; i <= sampleWindow; i++) {
         const x = i * gridSpacing;
         ctx.beginPath();
         ctx.moveTo(x, 0);
-        ctx.lineTo(x, canvas.height);
+        ctx.lineTo(x, rect.height);
         ctx.stroke();
       }
       
       // Draw horizontal grid lines
-      for (let i = 0; i < canvas.height; i += 20) {
+      for (let i = 0; i < rect.height; i += 20) {
         ctx.beginPath();
         ctx.moveTo(0, i);
-        ctx.lineTo(canvas.width, i);
+        ctx.lineTo(rect.width, i);
         ctx.stroke();
       }
 
       // Draw frequency bin labels (k values)
       ctx.fillStyle = '#666';
-      ctx.font = '10px Roboto Mono';
+      ctx.font = '12px Roboto Mono';
       ctx.textAlign = 'center';
       for (let i = 0; i < sampleWindow; i++) {
         const x = (i + 0.5) * gridSpacing;
-        ctx.fillText(`k=${i}`, x, canvas.height - 25);
+        ctx.fillText(`k=${i}`, x, rect.height - 25);
       }
 
       // Draw frequency range labels under k values
       ctx.fillStyle = '#888';
-      ctx.font = '8px Roboto Mono';
+      ctx.font = '10px Roboto Mono';
       const frequencyRanges = ['20Hz', '100Hz', '1kHz', '10kHz', '20kHz'];
       const maxDisplayRanges = Math.min(sampleWindow, frequencyRanges.length);
       
       for (let i = 0; i < maxDisplayRanges; i++) {
         const x = (i + 0.5) * gridSpacing;
-        ctx.fillText(frequencyRanges[i], x, canvas.height - 5);
+        ctx.fillText(frequencyRanges[i], x, rect.height - 5);
       }
 
       // Draw DFT results as frequency spectrum
-      if (dftResults && dftResults.length >= sampleWindow) {
+      if (displayResults && displayResults.length >= sampleWindow) {
         ctx.fillStyle = '#FF5722';
         const barWidth = gridSpacing * 0.8; // Leave some spacing between bars
         
         for (let i = 0; i < sampleWindow; i++) {
-          const magnitude = dftResults[i]?.magnitude || 0;
-          const maxMagnitude = Math.max(...dftResults.slice(0, sampleWindow).map(r => r.magnitude));
+          const magnitude = displayResults[i]?.magnitude || 0;
+          const maxMagnitude = Math.max(...displayResults.slice(0, sampleWindow).map(r => r.magnitude));
           const normalizedMagnitude = maxMagnitude > 0 ? magnitude / maxMagnitude : 0;
           
           const x = i * gridSpacing + (gridSpacing - barWidth) / 2;
-          const barHeight = normalizedMagnitude * (canvas.height - 35); // Leave space for labels
+          const barHeight = normalizedMagnitude * (rect.height - 35); // Leave space for labels
           
-          ctx.fillRect(x, canvas.height - 35 - barHeight, barWidth, barHeight);
+          ctx.fillRect(x, rect.height - 35 - barHeight, barWidth, barHeight);
           
           // Draw magnitude values
           ctx.fillStyle = '#AAA';
-          ctx.font = '8px Roboto Mono';
+          ctx.font = '10px Roboto Mono';
           ctx.textAlign = 'center';
-          ctx.fillText(magnitude.toFixed(2), x + barWidth/2, canvas.height - 40 - barHeight);
+          ctx.fillText(magnitude.toFixed(2), x + barWidth/2, rect.height - 40 - barHeight);
           ctx.fillStyle = '#FF5722';
         }
       }
