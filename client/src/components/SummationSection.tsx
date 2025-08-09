@@ -122,7 +122,7 @@ export function SummationSection({
       <div className="flex-1 overflow-hidden min-h-0 max-h-full">
         <div className="scroll-container h-full max-h-full overflow-x-auto overflow-y-hidden pb-1">
           <div className="flex gap-3" style={{ minHeight: 'min-content' }}>
-            {(dftResults.length > 0 ? dftResults.slice(0, Math.min(64, sampleWindow)) : Array.from({ length: Math.min(8, sampleWindow) }, (_, k) => ({
+            {(dftResults.length > 0 ? dftResults.slice(0, Math.min(64, sampleWindow)) : Array.from({ length: sampleWindow }, (_, k) => ({
               real: 0,
               imag: 0,
               magnitude: 0,
@@ -175,7 +175,7 @@ export function SummationSection({
         </div>
       </div>
 
-      <div className="mt-3 text-xs text-text-secondary text-center">
+      <div className="mt-auto pt-3 text-xs text-text-secondary text-center">
         Click to select frequency bin • <span>{sampleWindow}</span> bins total
       </div>
     </div>

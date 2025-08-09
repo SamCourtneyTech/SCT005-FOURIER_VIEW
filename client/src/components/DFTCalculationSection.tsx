@@ -111,7 +111,7 @@ export function DFTCalculationSection({
       <div className="flex-1 overflow-hidden min-h-0 max-h-full">
         <div className="scroll-container h-full max-h-full overflow-x-auto overflow-y-hidden pb-1">
           <div className="flex gap-3" style={{ minHeight: 'min-content' }}>
-            {(twiddleFactors.length > 0 ? twiddleFactors : Array.from({ length: Math.min(8, sampleWindow) }, (_, index) => ({
+            {(twiddleFactors.length > 0 ? twiddleFactors : Array.from({ length: sampleWindow }, (_, index) => ({
               real: 0,
               imag: 0,
               amplitude: 0,
@@ -146,7 +146,7 @@ export function DFTCalculationSection({
         </div>
       </div>
 
-      <div className="mt-3 text-xs text-text-secondary text-center flex-shrink-0">
+      <div className="mt-auto pt-3 text-xs text-text-secondary text-center flex-shrink-0">
         <span>Sample {currentSample + 1}</span> of <span>{sampleWindow}</span>
         • <span>k = {selectedFrequencyBin}</span>
       </div>
