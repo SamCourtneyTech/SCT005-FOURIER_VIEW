@@ -1,4 +1,7 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { Input } from "./ui/input";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Button } from "./ui/button";
 
 interface DFTResult {
   real: number;
@@ -25,6 +28,30 @@ export function SummationSection({
   viewMode,
 }: SummationSectionProps) {
   const canvasRefs = useRef<(HTMLCanvasElement | null)[]>([]);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [jumpToFreqBin, setJumpToFreqBin] = useState<string>("");
+
+  const scrollToFrequencyBin = (binIndex: number) => {
+    if (!scrollContainerRef.current) return;
+    
+    // Each frequency bin card is 288px wide (w-72 = 18rem = 288px) + 12px gap
+    const cardWidth = 288 + 12;
+    const scrollPosition = binIndex * cardWidth;
+    
+    scrollContainerRef.current.scrollTo({
+      left: scrollPosition,
+      behavior: 'smooth'
+    });
+  };
+
+  const handleJumpToFreqBin = () => {
+    const binNum = parseInt(jumpToFreqBin);
+    if (!isNaN(binNum) && binNum >= 0 && binNum < sampleWindow) {
+      scrollToFrequencyBin(binNum);
+      onSelectFrequencyBin(binNum); // Also select the frequency bin
+    }
+    setJumpToFreqBin(""); // Clear input after jump
+  };
 
   useEffect(() => {
     const visibleResults = dftResults.slice(0, Math.min(64, sampleWindow));
@@ -120,7 +147,7 @@ export function SummationSection({
       </div>
 
       <div className="flex-1 overflow-hidden min-h-0 max-h-full">
-        <div className="scroll-container h-full max-h-full overflow-x-auto overflow-y-hidden pb-1">
+        <div ref={scrollContainerRef} className="scroll-container h-full max-h-full overflow-x-auto overflow-y-hidden pb-1">
           <div className="flex gap-3" style={{ minHeight: 'min-content' }}>
             {(dftResults.length > 0 ? dftResults.slice(0, Math.min(2048, sampleWindow)) : Array.from({ length: sampleWindow }, (_, k) => ({
               real: 0,
@@ -176,7 +203,58 @@ export function SummationSection({
       </div>
 
       <div className="mt-auto pt-3 text-xs text-text-secondary text-center">
-        Click to select frequency bin • <span>{sampleWindow}</span> bins total
+        <div className="flex items-center justify-center gap-2 mb-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              const newBin = Math.max(0, selectedFrequencyBin - 1);
+              scrollToFrequencyBin(newBin);
+              onSelectFrequencyBin(newBin);
+            }}
+            disabled={selectedFrequencyBin <= 0}
+            className="h-6 w-6 p-0"
+          >
+            <ChevronLeft className="h-3 w-3" />
+          </Button>
+          
+          <div className="flex items-center gap-1">
+            <span>X[</span>
+            <Input
+              type="number"
+              value={jumpToFreqBin}
+              onChange={(e) => setJumpToFreqBin(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleJumpToFreqBin();
+                }
+              }}
+              onBlur={handleJumpToFreqBin}
+              min="0"
+              max={sampleWindow - 1}
+              placeholder={selectedFrequencyBin.toString()}
+              className="w-12 h-6 text-xs bg-gray-800 border-gray-600 text-white text-center px-1"
+            />
+            <span>]</span>
+          </div>
+          
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              const newBin = Math.min(sampleWindow - 1, selectedFrequencyBin + 1);
+              scrollToFrequencyBin(newBin);
+              onSelectFrequencyBin(newBin);
+            }}
+            disabled={selectedFrequencyBin >= sampleWindow - 1}
+            className="h-6 w-6 p-0"
+          >
+            <ChevronRight className="h-3 w-3" />
+          </Button>
+        </div>
+        <div>
+          <span>Click to select frequency bin • {sampleWindow} bins total</span>
+        </div>
       </div>
     </div>
   );

@@ -1,4 +1,7 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { Input } from "./ui/input";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Button } from "./ui/button";
 
 interface DFTCalculationSectionProps {
   sampleWindow: number;
@@ -20,6 +23,29 @@ export function DFTCalculationSection({
   viewMode,
 }: DFTCalculationSectionProps) {
   const canvasRefs = useRef<(HTMLCanvasElement | null)[]>([]);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [jumpToSample, setJumpToSample] = useState<string>("");
+
+  const scrollToSample = (sampleIndex: number) => {
+    if (!scrollContainerRef.current) return;
+    
+    // Each sample card is 288px wide (w-72 = 18rem = 288px) + 12px gap
+    const cardWidth = 288 + 12;
+    const scrollPosition = sampleIndex * cardWidth;
+    
+    scrollContainerRef.current.scrollTo({
+      left: scrollPosition,
+      behavior: 'smooth'
+    });
+  };
+
+  const handleJumpToSample = () => {
+    const sampleNum = parseInt(jumpToSample);
+    if (!isNaN(sampleNum) && sampleNum >= 1 && sampleNum <= sampleWindow) {
+      scrollToSample(sampleNum - 1); // Convert 1-based to 0-based index
+    }
+    setJumpToSample(""); // Clear input after jump
+  };
 
   useEffect(() => {
     twiddleFactors.forEach((factor, index) => {
@@ -109,7 +135,7 @@ export function DFTCalculationSection({
       </div>
 
       <div className="flex-1 overflow-hidden min-h-0 max-h-full">
-        <div className="scroll-container h-full max-h-full overflow-x-auto overflow-y-hidden pb-1">
+        <div ref={scrollContainerRef} className="scroll-container h-full max-h-full overflow-x-auto overflow-y-hidden pb-1">
           <div className="flex gap-3" style={{ minHeight: 'min-content' }}>
             {(twiddleFactors.length > 0 ? twiddleFactors : Array.from({ length: sampleWindow }, (_, index) => ({
               real: 0,
@@ -147,8 +173,50 @@ export function DFTCalculationSection({
       </div>
 
       <div className="mt-auto pt-3 text-xs text-text-secondary text-center flex-shrink-0">
-        <span>Sample {currentSample + 1}</span> of <span>{sampleWindow}</span>
-        • <span>k = {selectedFrequencyBin}</span>
+        <div className="flex items-center justify-center gap-2 mb-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => scrollToSample(Math.max(0, currentSample - 1))}
+            disabled={currentSample <= 0}
+            className="h-6 w-6 p-0"
+          >
+            <ChevronLeft className="h-3 w-3" />
+          </Button>
+          
+          <div className="flex items-center gap-1">
+            <span>Sample</span>
+            <Input
+              type="number"
+              value={jumpToSample}
+              onChange={(e) => setJumpToSample(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleJumpToSample();
+                }
+              }}
+              onBlur={handleJumpToSample}
+              min="1"
+              max={sampleWindow}
+              placeholder={(currentSample + 1).toString()}
+              className="w-12 h-6 text-xs bg-gray-800 border-gray-600 text-white text-center px-1"
+            />
+            <span>of {sampleWindow}</span>
+          </div>
+          
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => scrollToSample(Math.min(sampleWindow - 1, currentSample + 1))}
+            disabled={currentSample >= sampleWindow - 1}
+            className="h-6 w-6 p-0"
+          >
+            <ChevronRight className="h-3 w-3" />
+          </Button>
+        </div>
+        <div>
+          <span>k = {selectedFrequencyBin}</span>
+        </div>
       </div>
     </div>
   );
