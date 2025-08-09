@@ -126,8 +126,11 @@ export function DFTVisualizer() {
 
   // Load default audio on startup
   useEffect(() => {
-    if (selectedExampleAudio) {
-      loadExampleAudio(selectedExampleAudio);
+    // Load default piano audio on mount
+    if (!selectedExampleAudio && !uploadedFileName) {
+      setSelectedExampleAudio("piano");
+      setCurrentAudioSource("example");
+      loadExampleAudio("piano");
     }
   }, []); // Empty dependency array - only run once on mount
 
@@ -244,7 +247,7 @@ export function DFTVisualizer() {
       {/* Main Visualization Grid */}
       <main className="flex flex-col md:grid md:grid-cols-4 gap-0 md:gap-1 flex-1 overflow-y-auto md:overflow-hidden pb-4 md:pb-1 md:h-full">
         {/* Section 1 - Time Domain */}
-        <div className="h-56 md:h-auto flex-shrink-0">
+        <div className="h-56 md:h-full flex-shrink-0 md:flex-shrink md:min-h-0">
           <TimeDomainSection
             analyserNode={analyserNode}
             currentAmplitude={currentAmplitude}
@@ -257,7 +260,7 @@ export function DFTVisualizer() {
         </div>
 
         {/* Section 2 - DFT Calculation */}
-        <div className="h-64 md:h-auto flex-shrink-0">
+        <div className="h-64 md:h-full flex-shrink-0 md:flex-shrink md:min-h-0">
           <DFTCalculationSection
             sampleWindow={sampleWindow}
             selectedFrequencyBin={selectedFrequencyBin}
@@ -270,7 +273,7 @@ export function DFTVisualizer() {
         </div>
 
         {/* Section 3 - Summation */}
-        <div className="h-60 md:h-auto flex-shrink-0">
+        <div className="h-60 md:h-full flex-shrink-0 md:flex-shrink md:min-h-0">
           <SummationSection
             dftResults={dftResults}
             selectedFrequencyBin={selectedFrequencyBin}
@@ -282,7 +285,7 @@ export function DFTVisualizer() {
         </div>
 
         {/* Section 4 - Spectrum Analyzer */}
-        <div className="h-64 md:h-auto flex-shrink-0">
+        <div className="h-64 md:h-full flex-shrink-0 md:flex-shrink md:min-h-0">
           <SpectrumAnalyzer
             analyserNode={analyserNode}
             peakFrequency={peakFrequency}
