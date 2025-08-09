@@ -126,11 +126,9 @@ export function DFTVisualizer() {
 
   // Load default audio on startup
   useEffect(() => {
-    // Load default piano audio on mount
-    if (!selectedExampleAudio && !uploadedFileName) {
-      setSelectedExampleAudio("piano");
-      setCurrentAudioSource("example");
-      loadExampleAudio("piano");
+    // Load the initially selected audio on mount
+    if (selectedExampleAudio && currentAudioSource === "example") {
+      loadExampleAudio(selectedExampleAudio);
     }
   }, []); // Empty dependency array - only run once on mount
 

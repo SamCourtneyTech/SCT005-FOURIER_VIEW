@@ -121,8 +121,8 @@ export function SpectrumAnalyzer({
   }, [analyserNode, dftResults, sampleWindow, isPlaying]);
 
   return (
-    <div className="bg-surface p-4 flex flex-col h-full md:h-full">
-      <div className="flex items-center justify-between mb-4">
+    <div className="bg-surface p-4 flex flex-col h-full md:h-full overflow-hidden">
+      <div className="flex items-center justify-between mb-4 flex-shrink-0">
         <h2 className="text-lg font-semibold text-primary">Frequency Domain</h2>
         <div className="flex items-center space-x-2 text-xs text-text-secondary">
           <span>|X[k]|</span>
@@ -139,14 +139,14 @@ export function SpectrumAnalyzer({
         </div>
       </div>
 
-      <div className="flex-1 bg-dark rounded-lg p-3 border border-gray-700 relative">
+      <div className="flex-1 bg-dark rounded-lg p-3 border border-gray-700 relative min-h-0 overflow-hidden">
         <canvas
           ref={canvasRef}
-          className="w-full h-full visualization-canvas rounded"
+          className="w-full h-full visualization-canvas rounded block"
         />
       </div>
 
-      <div className="mt-3 space-y-2">
+      <div className="mt-3 space-y-2 flex-shrink-0">
         <div className="flex justify-between text-xs text-text-secondary">
           <span>Peak Frequency</span>
           <span>{peakFrequency.toFixed(0)} Hz</span>

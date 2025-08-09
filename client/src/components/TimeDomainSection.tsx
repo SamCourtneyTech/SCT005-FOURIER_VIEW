@@ -168,20 +168,20 @@ export function TimeDomainSection({
   }, [analyserNode, isPlaying, sampleWindow, timeData]);
 
   return (
-    <div className="bg-surface border-r border-gray-700 p-4 flex flex-col h-full md:h-full">
-      <div className="flex items-center justify-between mb-4">
+    <div className="bg-surface border-r border-gray-700 p-4 flex flex-col h-full md:h-full overflow-hidden">
+      <div className="flex items-center justify-between mb-4 flex-shrink-0">
         <h2 className="text-lg font-semibold text-primary">Time Domain Signal</h2>
         <div className="text-xs text-text-secondary">x(t)</div>
       </div>
 
-      <div className="flex-1 bg-dark rounded-lg p-3 border border-gray-700">
+      <div className="flex-1 bg-dark rounded-lg p-3 border border-gray-700 min-h-0 overflow-hidden">
         <canvas
           ref={canvasRef}
-          className="w-full h-full visualization-canvas rounded"
+          className="w-full h-full visualization-canvas rounded block"
         />
       </div>
 
-      <div className="mt-3 space-y-2">
+      <div className="mt-3 space-y-2 flex-shrink-0">
         <div className="flex justify-between text-xs text-text-secondary">
           <span>Amplitude</span>
           <span>{currentAmplitude.toFixed(1)} dB</span>

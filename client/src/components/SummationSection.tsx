@@ -111,15 +111,15 @@ export function SummationSection({
   }, [dftResults, selectedFrequencyBin, sampleWindow]);
 
   return (
-    <div className="bg-surface border-r border-gray-700 p-4 flex flex-col h-full md:h-full">
-      <div className="flex items-center justify-between mb-4">
+    <div className="bg-surface border-r border-gray-700 p-4 flex flex-col h-full md:h-full overflow-hidden">
+      <div className="flex items-center justify-between mb-4 flex-shrink-0">
         <h2 className="text-lg font-semibold text-primary">Summation Results</h2>
         <div className="text-xs text-text-secondary font-mono">
           {viewMode === "vector" ? "X[k] = Σ x[n]W^kn" : "Frequency projections"}
         </div>
       </div>
 
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-hidden min-h-0">
         <div className="scroll-container h-full overflow-x-auto md:overflow-y-auto md:overflow-x-hidden overflow-y-hidden pb-1">
           <div className="flex md:flex md:flex-col gap-3 md:gap-2 h-full" style={{ minHeight: '200px' }}>
             {dftResults.slice(0, Math.min(64, sampleWindow)).map((result, k) => (

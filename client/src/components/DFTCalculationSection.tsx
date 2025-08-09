@@ -100,15 +100,15 @@ export function DFTCalculationSection({
   }, [twiddleFactors]);
 
   return (
-    <div className="bg-surface border-r border-gray-700 p-4 flex flex-col h-full md:h-full">
-      <div className="flex items-center justify-between mb-4">
+    <div className="bg-surface border-r border-gray-700 p-4 flex flex-col h-full md:h-full overflow-hidden">
+      <div className="flex items-center justify-between mb-4 flex-shrink-0">
         <h2 className="text-lg font-semibold text-primary">DFT Internal Calculations</h2>
         <div className="text-xs text-text-secondary font-mono">
           x[n] × W<sub>N</sub><sup>kn</sup>
         </div>
       </div>
 
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-hidden min-h-0">
         <div className="scroll-container h-full overflow-x-auto md:overflow-y-auto md:overflow-x-hidden overflow-y-hidden pb-1">
           <div className="flex md:grid md:grid-cols-1 gap-3 md:gap-2 h-full" style={{ minHeight: '200px' }}>
             {twiddleFactors.map((factor, index) => (
@@ -141,7 +141,7 @@ export function DFTCalculationSection({
         </div>
       </div>
 
-      <div className="mt-3 text-xs text-text-secondary text-center">
+      <div className="mt-3 text-xs text-text-secondary text-center flex-shrink-0">
         <span>Sample {currentSample + 1}</span> of <span>{sampleWindow}</span>
         • <span>k = {selectedFrequencyBin}</span>
       </div>
