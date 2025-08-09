@@ -147,7 +147,7 @@ export function DFTVisualizer() {
                   value={sampleWindow}
                   onChange={(e) => setSampleWindow(Number(e.target.value))}
                   min="4"
-                  max="64"
+                  max="2048"
                   className="bg-gray-800 border-gray-600 w-12 md:w-16 text-center text-white text-xs md:text-sm"
                 />
                 <span className="text-xs whitespace-nowrap">(N={sampleWindow})</span>
