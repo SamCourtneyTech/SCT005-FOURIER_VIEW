@@ -126,10 +126,18 @@ export function DFTVisualizer() {
 
   // Load default audio on startup
   useEffect(() => {
-    // Load the initially selected audio on mount
-    if (selectedExampleAudio && currentAudioSource === "example") {
-      loadExampleAudio(selectedExampleAudio);
-    }
+    // Load the initially selected audio on mount - ensure audio context is ready for mobile
+    const initializeAudio = async () => {
+      if (selectedExampleAudio && currentAudioSource === "example") {
+        try {
+          await loadExampleAudio(selectedExampleAudio);
+        } catch (error) {
+          console.error('Failed to load initial audio:', error);
+        }
+      }
+    };
+    
+    initializeAudio();
   }, []); // Empty dependency array - only run once on mount
 
   return (
@@ -245,7 +253,7 @@ export function DFTVisualizer() {
       {/* Main Visualization Grid */}
       <main className="flex flex-col md:grid md:grid-cols-4 gap-0 md:gap-1 flex-1 overflow-y-auto md:overflow-hidden pb-4 md:pb-1 md:h-full">
         {/* Section 1 - Time Domain */}
-        <div className="h-56 md:h-full flex-shrink-0 md:flex-shrink md:min-h-0">
+        <div className="h-80 md:h-full flex-shrink-0 md:flex-shrink md:min-h-0">
           <TimeDomainSection
             analyserNode={analyserNode}
             currentAmplitude={currentAmplitude}
@@ -258,7 +266,7 @@ export function DFTVisualizer() {
         </div>
 
         {/* Section 2 - DFT Calculation */}
-        <div className="h-64 md:h-full flex-shrink-0 md:flex-shrink md:min-h-0">
+        <div className="h-96 md:h-full flex-shrink-0 md:flex-shrink md:min-h-0">
           <DFTCalculationSection
             sampleWindow={sampleWindow}
             selectedFrequencyBin={selectedFrequencyBin}
@@ -271,7 +279,7 @@ export function DFTVisualizer() {
         </div>
 
         {/* Section 3 - Summation */}
-        <div className="h-60 md:h-full flex-shrink-0 md:flex-shrink md:min-h-0">
+        <div className="h-80 md:h-full flex-shrink-0 md:flex-shrink md:min-h-0">
           <SummationSection
             dftResults={dftResults}
             selectedFrequencyBin={selectedFrequencyBin}
@@ -283,7 +291,7 @@ export function DFTVisualizer() {
         </div>
 
         {/* Section 4 - Spectrum Analyzer */}
-        <div className="h-64 md:h-full flex-shrink-0 md:flex-shrink md:min-h-0">
+        <div className="h-80 md:h-full flex-shrink-0 md:flex-shrink md:min-h-0">
           <SpectrumAnalyzer
             analyserNode={analyserNode}
             peakFrequency={peakFrequency}

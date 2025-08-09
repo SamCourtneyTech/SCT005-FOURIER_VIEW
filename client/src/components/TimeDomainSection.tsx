@@ -31,46 +31,51 @@ export function TimeDomainSection({
     if (!ctx) return;
 
     const draw = () => {
-      // Set canvas size
-      canvas.width = canvas.offsetWidth;
-      canvas.height = canvas.offsetHeight;
+      // Set canvas size with device pixel ratio for HD quality
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.scale(dpr, dpr);
+      canvas.style.width = rect.width + 'px';
+      canvas.style.height = rect.height + 'px';
 
       // Clear canvas
       ctx.fillStyle = '#1a1a1a';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillRect(0, 0, rect.width, rect.height);
 
       // Draw grid
       ctx.strokeStyle = '#333';
       ctx.lineWidth = 1;
-      const gridSpacing = canvas.width / sampleWindow;
+      const gridSpacing = rect.width / sampleWindow;
       
       // Draw vertical grid lines for each sample (n markings)
       for (let i = 0; i <= sampleWindow; i++) {
         const x = i * gridSpacing;
         ctx.beginPath();
         ctx.moveTo(x, 0);
-        ctx.lineTo(x, canvas.height);
+        ctx.lineTo(x, rect.height);
         ctx.stroke();
       }
       
       // Draw horizontal grid lines
-      for (let i = 0; i < canvas.height; i += 20) {
+      for (let i = 0; i < rect.height; i += 20) {
         ctx.beginPath();
         ctx.moveTo(0, i);
-        ctx.lineTo(canvas.width, i);
+        ctx.lineTo(rect.width, i);
         ctx.stroke();
       }
 
       // Draw n markings on x-axis - show quarter/center/3-quarter for larger windows
       ctx.fillStyle = '#666';
-      ctx.font = '10px Roboto Mono';
+      ctx.font = '12px Roboto Mono';
       ctx.textAlign = 'center';
       
       if (sampleWindow <= 8) {
         // Show all n values for small windows
         for (let i = 0; i < sampleWindow; i++) {
           const x = (i + 0.5) * gridSpacing;
-          ctx.fillText(`n=${i}`, x, canvas.height - 5);
+          ctx.fillText(`n=${i}`, x, rect.height - 5);
         }
       } else {
         // Show quarter, center, 3-quarter for larger windows
@@ -81,23 +86,23 @@ export function TimeDomainSection({
         const positions = [0, quarter, center, threeQuarter, sampleWindow - 1];
         positions.forEach(i => {
           const x = (i + 0.5) * gridSpacing;
-          ctx.fillText(`n=${i}`, x, canvas.height - 5);
+          ctx.fillText(`n=${i}`, x, rect.height - 5);
         });
       }
 
       // Draw y-axis magnitude labels
       ctx.textAlign = 'right';
       ctx.fillStyle = '#666';
-      ctx.font = '10px Roboto Mono';
+      ctx.font = '12px Roboto Mono';
       ctx.fillText('1.0', 15, 15);
-      ctx.fillText('0.5', 15, canvas.height / 4 + 5);
-      ctx.fillText('0.0', 15, canvas.height / 2 + 5);
-      ctx.fillText('-0.5', 15, (3 * canvas.height) / 4 + 5);
-      ctx.fillText('-1.0', 15, canvas.height - 5);
+      ctx.fillText('0.5', 15, rect.height / 4 + 5);
+      ctx.fillText('0.0', 15, rect.height / 2 + 5);
+      ctx.fillText('-0.5', 15, (3 * rect.height) / 4 + 5);
+      ctx.fillText('-1.0', 15, rect.height - 5);
       
       // Draw "Magnitude" label on y-axis
       ctx.save();
-      ctx.translate(10, canvas.height / 2);
+      ctx.translate(10, rect.height / 2);
       ctx.rotate(-Math.PI / 2);
       ctx.textAlign = 'center';
       ctx.fillStyle = '#888';
@@ -109,8 +114,8 @@ export function TimeDomainSection({
       ctx.strokeStyle = '#444';
       ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.moveTo(0, canvas.height / 2);
-      ctx.lineTo(canvas.width, canvas.height / 2);
+      ctx.moveTo(0, rect.height / 2);
+      ctx.lineTo(rect.width, rect.height / 2);
       ctx.stroke();
 
       // Store current timeData when playing for freezing on pause
@@ -123,8 +128,8 @@ export function TimeDomainSection({
 
       // Draw waveform using displayData scaled to sample window with bars from center
       if (displayData && displayData.length >= sampleWindow) {
-        const sliceWidth = canvas.width / sampleWindow;
-        const centerY = canvas.height / 2;
+        const sliceWidth = rect.width / sampleWindow;
+        const centerY = rect.height / 2;
         const barWidth = sliceWidth * 0.8; // Leave some spacing between bars
 
         for (let i = 0; i < sampleWindow; i++) {
@@ -147,7 +152,7 @@ export function TimeDomainSection({
           // Draw sample points at the tip of each bar
           ctx.fillStyle = '#FFD700';
           ctx.beginPath();
-          ctx.arc(x + barWidth / 2, centerY - barHeight, 2, 0, 2 * Math.PI);
+          ctx.arc(x + barWidth / 2, centerY - barHeight, 3, 0, 2 * Math.PI);
           ctx.fill();
         }
       }

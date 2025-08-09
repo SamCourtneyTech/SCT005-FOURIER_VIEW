@@ -156,7 +156,16 @@ export function useAudioProcessor() {
 
   // Toggle play/pause
   const togglePlayPause = useCallback(async () => {
-    if (!audioContext || !audioBuffer || !analyserNode) return;
+    // Initialize audio context if needed (especially for mobile)
+    if (!audioContext) {
+      await initializeAudioContext();
+      return;
+    }
+    
+    if (!audioBuffer || !analyserNode) {
+      console.log('Audio not ready - buffer:', !!audioBuffer, 'analyser:', !!analyserNode);
+      return;
+    }
 
     if (isPlaying) {
       // Pause
