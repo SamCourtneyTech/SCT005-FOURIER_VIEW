@@ -30,6 +30,12 @@ export function SummationSection({
   const canvasRefs = useRef<(HTMLCanvasElement | null)[]>([]);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [jumpToFreqBin, setJumpToFreqBin] = useState<string>("");
+  const [windowStart, setWindowStart] = useState(0);
+  
+  // Windowed view settings
+  const INITIAL_LOAD_COUNT = 16;
+  const WINDOW_SIZE = 17; // center item + 8 before + 8 after
+  const BUFFER_SIZE = 8;
 
   const scrollToFrequencyBin = (binIndex: number) => {
     if (!scrollContainerRef.current) return;
@@ -47,17 +53,36 @@ export function SummationSection({
   const handleJumpToFreqBin = () => {
     const binNum = parseInt(jumpToFreqBin);
     if (!isNaN(binNum) && binNum >= 0 && binNum < sampleWindow) {
-      scrollToFrequencyBin(binNum);
+      // If we have more than INITIAL_LOAD_COUNT items, use windowed view
+      if (dftResults.length > INITIAL_LOAD_COUNT) {
+        // Calculate window start (target index - 8, but keep within bounds)
+        const newWindowStart = Math.max(0, Math.min(binNum - BUFFER_SIZE, dftResults.length - WINDOW_SIZE));
+        setWindowStart(newWindowStart);
+      } else {
+        scrollToFrequencyBin(binNum);
+      }
       onSelectFrequencyBin(binNum); // Also select the frequency bin
     }
     setJumpToFreqBin(""); // Clear input after jump
   };
 
+  // Calculate which items to render based on windowed view
+  const getVisibleItems = () => {
+    if (dftResults.length <= INITIAL_LOAD_COUNT) {
+      // Show all items if we have 16 or fewer
+      return dftResults;
+    } else {
+      // Show windowed view (17 items: center + 8 before + 8 after)
+      const windowEnd = Math.min(windowStart + WINDOW_SIZE, dftResults.length);
+      return dftResults.slice(windowStart, windowEnd);
+    }
+  };
+
+  const visibleItems = getVisibleItems();
+  const isWindowedView = dftResults.length > INITIAL_LOAD_COUNT;
+
   useEffect(() => {
-    // Optimize for large sample windows by limiting rendered canvases
-    const maxVisibleCanvases = Math.min(dftResults.length, 256);
-    const visibleResults = dftResults.slice(0, maxVisibleCanvases);
-    visibleResults.forEach((result, index) => {
+    visibleItems.forEach((result, index) => {
       const canvas = canvasRefs.current[index];
       if (!canvas) return;
 
@@ -159,26 +184,29 @@ export function SummationSection({
       <div className="flex-1 overflow-hidden min-h-0 max-h-full">
         <div ref={scrollContainerRef} className="scroll-container h-full max-h-full overflow-x-auto overflow-y-hidden pb-1">
           <div className="flex gap-3" style={{ minHeight: 'min-content' }}>
-            {(dftResults.length > 0 ? dftResults.slice(0, Math.min(256, sampleWindow)) : Array.from({ length: Math.min(sampleWindow, 256) }, (_, k) => ({
+            {(visibleItems.length > 0 ? visibleItems : Array.from({ length: Math.min(sampleWindow, INITIAL_LOAD_COUNT) }, (_, k) => ({
               real: 0,
               imag: 0,
               magnitude: 0,
               phase: 0
-            }))).map((result, k) => (
+            }))).map((result, k) => {
+              // For windowed view, calculate the actual index
+              const actualK = isWindowedView ? windowStart + k : k;
+              return (
               <div
-                key={k}
+                key={actualK}
                 className={`bg-dark rounded-lg p-3 border-2 cursor-pointer hover:bg-gray-900 transition-colors flex-shrink-0 w-72 ${
-                  selectedFrequencyBin === k ? 'border-primary' : 'border-gray-700'
+                  selectedFrequencyBin === actualK ? 'border-primary' : 'border-gray-700'
                 }`}
-                onClick={() => onSelectFrequencyBin(k)}
+                onClick={() => onSelectFrequencyBin(actualK)}
               >
                 <div className="flex items-center justify-between mb-2">
                   <span className={`text-sm font-mono font-bold ${
-                    selectedFrequencyBin === k ? 'text-primary' : 'text-accent'
+                    selectedFrequencyBin === actualK ? 'text-primary' : 'text-accent'
                   }`}>
-                    X[{k}]
+                    X[{actualK}]
                   </span>
-                  {selectedFrequencyBin === k && (
+                  {selectedFrequencyBin === actualK && (
                     <span className="text-xs text-success">Selected</span>
                   )}
                 </div>
@@ -207,12 +235,20 @@ export function SummationSection({
                   className="w-full visualization-canvas rounded mt-2"
                 />
               </div>
-            ))}
+            );
+            })}
           </div>
         </div>
       </div>
 
       <div className="mt-auto pt-3 text-xs text-text-secondary text-center">
+        {/* Windowed view indicator */}
+        {isWindowedView && (
+          <div className="bg-blue-900/30 border border-blue-600/50 rounded px-3 py-2 text-xs text-blue-200 mb-2">
+            Windowed view: Showing {visibleItems.length} of {dftResults.length} items (Window: {windowStart}-{windowStart + visibleItems.length - 1})
+          </div>
+        )}
+        
         <div className="flex items-center justify-center gap-2 mb-1">
           <Button
             variant="ghost"

@@ -25,6 +25,12 @@ export function DFTCalculationSection({
   const canvasRefs = useRef<(HTMLCanvasElement | null)[]>([]);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [jumpToSample, setJumpToSample] = useState<string>("");
+  const [windowStart, setWindowStart] = useState(0);
+  
+  // Windowed view settings
+  const INITIAL_LOAD_COUNT = 16;
+  const WINDOW_SIZE = 17; // center item + 8 before + 8 after
+  const BUFFER_SIZE = 8;
 
   const scrollToSample = (sampleIndex: number) => {
     if (!scrollContainerRef.current) return;
@@ -42,15 +48,37 @@ export function DFTCalculationSection({
   const handleJumpToSample = () => {
     const sampleNum = parseInt(jumpToSample);
     if (!isNaN(sampleNum) && sampleNum >= 1 && sampleNum <= sampleWindow) {
-      scrollToSample(sampleNum - 1); // Convert 1-based to 0-based index
+      const targetIndex = sampleNum - 1; // Convert 1-based to 0-based index
+      
+      // If we have more than INITIAL_LOAD_COUNT items, use windowed view
+      if (twiddleFactors.length > INITIAL_LOAD_COUNT) {
+        // Calculate window start (target index - 8, but keep within bounds)
+        const newWindowStart = Math.max(0, Math.min(targetIndex - BUFFER_SIZE, twiddleFactors.length - WINDOW_SIZE));
+        setWindowStart(newWindowStart);
+      } else {
+        scrollToSample(targetIndex);
+      }
     }
     setJumpToSample(""); // Clear input after jump
   };
 
+  // Calculate which items to render based on windowed view
+  const getVisibleItems = () => {
+    if (twiddleFactors.length <= INITIAL_LOAD_COUNT) {
+      // Show all items if we have 16 or fewer
+      return twiddleFactors;
+    } else {
+      // Show windowed view (17 items: center + 8 before + 8 after)
+      const windowEnd = Math.min(windowStart + WINDOW_SIZE, twiddleFactors.length);
+      return twiddleFactors.slice(windowStart, windowEnd);
+    }
+  };
+
+  const visibleItems = getVisibleItems();
+  const isWindowedView = twiddleFactors.length > INITIAL_LOAD_COUNT;
+
   useEffect(() => {
-    // Only render visible canvases to optimize performance for large sample windows
-    const maxVisibleCanvases = Math.min(twiddleFactors.length, 256);
-    twiddleFactors.slice(0, maxVisibleCanvases).forEach((factor, index) => {
+    visibleItems.forEach((factor, index) => {
       const canvas = canvasRefs.current[index];
       if (!canvas) return;
 
@@ -147,17 +175,20 @@ export function DFTCalculationSection({
       <div className="flex-1 overflow-hidden min-h-0 max-h-full">
         <div ref={scrollContainerRef} className="scroll-container h-full max-h-full overflow-x-auto overflow-y-hidden pb-1">
           <div className="flex gap-3" style={{ minHeight: 'min-content' }}>
-            {(twiddleFactors.length > 0 ? twiddleFactors : Array.from({ length: Math.min(sampleWindow, 256) }, (_, index) => ({
+            {(visibleItems.length > 0 ? visibleItems : Array.from({ length: Math.min(sampleWindow, INITIAL_LOAD_COUNT) }, (_, index) => ({
               real: 0,
               imag: 0,
               amplitude: 0,
               result: { real: 0, imag: 0 }
-            }))).map((factor, index) => (
-              <div key={index} className="bg-dark rounded-lg p-3 border border-gray-700 flex-shrink-0 w-72">{/* Consistent horizontal scroll for all screen sizes */}
+            }))).map((factor, index) => {
+              // For windowed view, calculate the actual index
+              const actualIndex = isWindowedView ? windowStart + index : index;
+              return (
+              <div key={actualIndex} className="bg-dark rounded-lg p-3 border border-gray-700 flex-shrink-0 w-72">{/* Consistent horizontal scroll for all screen sizes */}
                 <div className="flex flex-col items-center mb-2">
-                  <span className="text-sm font-mono text-accent">n = {index}</span>
+                  <span className="text-sm font-mono text-accent">n = {actualIndex}</span>
                   <span className="text-xs text-text-secondary text-center">
-                    W₈{selectedFrequencyBin * index} = {factor.real.toFixed(3)} {factor.imag >= 0 ? '+' : ''} {factor.imag.toFixed(3)}i
+                    W₈{selectedFrequencyBin * actualIndex} = {factor.real.toFixed(3)} {factor.imag >= 0 ? '+' : ''} {factor.imag.toFixed(3)}i
                   </span>
                 </div>
                 <canvas
@@ -177,12 +208,20 @@ export function DFTCalculationSection({
                   </span>
                 </div>
               </div>
-            ))}
+            );
+            })}
           </div>
         </div>
       </div>
 
       <div className="mt-auto pt-3 text-xs text-text-secondary text-center flex-shrink-0">
+        {/* Windowed view indicator */}
+        {isWindowedView && (
+          <div className="bg-blue-900/30 border border-blue-600/50 rounded px-3 py-2 text-xs text-blue-200 mb-2">
+            Windowed view: Showing {visibleItems.length} of {twiddleFactors.length} items (Window: {windowStart + 1}-{windowStart + visibleItems.length})
+          </div>
+        )}
+        
         <div className="flex items-center justify-center gap-2 mb-1">
           <Button
             variant="ghost"
