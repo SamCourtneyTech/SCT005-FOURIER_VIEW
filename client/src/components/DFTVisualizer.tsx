@@ -124,6 +124,11 @@ export function DFTVisualizer() {
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
+  // Use frozen data when paused, live data when playing
+  const currentTimeData = isPlaying ? timeData : timeData;
+  const currentDftResults = isPlaying ? dftResults : dftResults;
+  const currentTwiddleFactors = isPlaying ? twiddleFactors : twiddleFactors;
+
   // Load default audio on startup with proper dependency tracking
   useEffect(() => {
     // Load the initially selected audio when audio context becomes available
@@ -269,8 +274,8 @@ export function DFTVisualizer() {
             <DFTCalculationSection
               sampleWindow={sampleWindow}
               selectedFrequencyBin={selectedFrequencyBin}
-              timeData={timeData}
-              twiddleFactors={twiddleFactors}
+              timeData={currentTimeData}
+              twiddleFactors={currentTwiddleFactors}
               currentSample={currentSample}
               isPlaying={isPlaying}
               viewMode={viewMode}
@@ -287,7 +292,7 @@ export function DFTVisualizer() {
               </div>
             )}
             <SummationSection
-              dftResults={dftResults}
+              dftResults={currentDftResults}
               selectedFrequencyBin={selectedFrequencyBin}
               onSelectFrequencyBin={setSelectedFrequencyBin}
               sampleWindow={sampleWindow}

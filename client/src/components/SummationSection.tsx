@@ -82,6 +82,9 @@ export function SummationSection({
   const isWindowedView = dftResults.length > INITIAL_LOAD_COUNT;
 
   useEffect(() => {
+    // Don't update canvases when paused (frozen)
+    if (!isPlaying) return;
+    
     visibleItems.forEach((result, index) => {
       const canvas = canvasRefs.current[index];
       if (!canvas) return;
@@ -170,7 +173,7 @@ export function SummationSection({
       );
       ctx.fill();
     });
-  }, [dftResults, selectedFrequencyBin, sampleWindow]);
+  }, [visibleItems, isPlaying, selectedFrequencyBin, sampleWindow]);
 
   return (
     <div className="bg-surface border-r border-gray-700 p-4 flex flex-col h-full md:h-full overflow-hidden">
@@ -275,10 +278,16 @@ export function SummationSection({
                   handleJumpToFreqBin();
                 }
               }}
-              onBlur={handleJumpToFreqBin}
+              onBlur={() => {
+                if (jumpToFreqBin.trim() === '') {
+                  setJumpToFreqBin(''); // Keep empty instead of defaulting
+                } else {
+                  handleJumpToFreqBin();
+                }
+              }}
               min="0"
               max={sampleWindow - 1}
-              placeholder={selectedFrequencyBin.toString()}
+              placeholder="Enter bin #"
               className="w-12 h-6 text-xs bg-gray-800 border-gray-600 text-white text-center px-1"
             />
             <span>]</span>

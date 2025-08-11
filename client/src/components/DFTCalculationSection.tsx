@@ -78,6 +78,9 @@ export function DFTCalculationSection({
   const isWindowedView = twiddleFactors.length > INITIAL_LOAD_COUNT;
 
   useEffect(() => {
+    // Don't update canvases when paused (frozen)
+    if (!isPlaying) return;
+    
     visibleItems.forEach((factor, index) => {
       const canvas = canvasRefs.current[index];
       if (!canvas) return;
@@ -161,7 +164,7 @@ export function DFTCalculationSection({
       ctx.fillText('W', vectorCenterX - 10, displayHeight - 5);
       ctx.fillText('Result', vectorCenterX + 50, displayHeight - 5);
     });
-  }, [twiddleFactors]);
+  }, [visibleItems, isPlaying, selectedFrequencyBin, viewMode]);
 
   return (
     <div className="bg-surface border-r border-gray-700 p-4 flex flex-col h-full md:h-full overflow-hidden">
@@ -244,10 +247,16 @@ export function DFTCalculationSection({
                   handleJumpToSample();
                 }
               }}
-              onBlur={handleJumpToSample}
+              onBlur={() => {
+                if (jumpToSample.trim() === '') {
+                  setJumpToSample(''); // Keep empty instead of defaulting
+                } else {
+                  handleJumpToSample();
+                }
+              }}
               min="1"
               max={sampleWindow}
-              placeholder={(currentSample + 1).toString()}
+              placeholder="Enter sample #"
               className="w-12 h-6 text-xs bg-gray-800 border-gray-600 text-white text-center px-1"
             />
             <span>of {sampleWindow}</span>
