@@ -54,14 +54,16 @@ export function SpectrumAnalyzer({
       ctx.fillStyle = '#1a1a1a';
       ctx.fillRect(0, 0, rect.width, rect.height);
 
-      // Draw grid
+      // Draw grid with padding to prevent labels from going off screen
       ctx.strokeStyle = '#333';
       ctx.lineWidth = 1;
-      const gridSpacing = rect.width / sampleWindow;
+      const padding = 20; // Add padding on both sides
+      const usableWidth = rect.width - (padding * 2);
+      const gridSpacing = usableWidth / sampleWindow;
       
       // Draw vertical grid lines for each frequency bin
       for (let i = 0; i <= sampleWindow; i++) {
-        const x = i * gridSpacing;
+        const x = padding + (i * gridSpacing);
         ctx.beginPath();
         ctx.moveTo(x, 0);
         ctx.lineTo(x, rect.height);
@@ -71,8 +73,8 @@ export function SpectrumAnalyzer({
       // Draw horizontal grid lines
       for (let i = 0; i < rect.height; i += 20) {
         ctx.beginPath();
-        ctx.moveTo(0, i);
-        ctx.lineTo(rect.width, i);
+        ctx.moveTo(padding, i);
+        ctx.lineTo(rect.width - padding, i);
         ctx.stroke();
       }
 
@@ -84,7 +86,7 @@ export function SpectrumAnalyzer({
       if (sampleWindow <= 8) {
         // Show all k values for small windows
         for (let i = 0; i < sampleWindow; i++) {
-          const x = (i + 0.5) * gridSpacing;
+          const x = padding + (i + 0.5) * gridSpacing;
           ctx.fillText(`k=${i}`, x, rect.height - 25);
         }
       } else {
@@ -98,7 +100,7 @@ export function SpectrumAnalyzer({
         ];
         
         for (const i of keyIndices) {
-          const x = (i + 0.5) * gridSpacing;
+          const x = padding + (i + 0.5) * gridSpacing;
           ctx.fillText(`k=${i}`, x, rect.height - 25);
         }
       }
@@ -109,19 +111,19 @@ export function SpectrumAnalyzer({
       ctx.textAlign = 'center';
       
       // 0Hz at k=0
-      const zeroHzX = (0 + 0.5) * gridSpacing;
+      const zeroHzX = padding + (0 + 0.5) * gridSpacing;
       ctx.fillText('0Hz', zeroHzX, rect.height - 5);
       
       // fn (Nyquist frequency) at k=N/2
       if (sampleWindow > 2) {
         const nyquistIndex = Math.floor(sampleWindow / 2);
-        const nyquistX = (nyquistIndex + 0.5) * gridSpacing;
+        const nyquistX = padding + (nyquistIndex + 0.5) * gridSpacing;
         ctx.fillText('fn', nyquistX, rect.height - 5);
       }
       
       // fs (sampling frequency) at k=N-1
       if (sampleWindow > 1) {
-        const samplingX = (sampleWindow - 1 + 0.5) * gridSpacing;
+        const samplingX = padding + (sampleWindow - 1 + 0.5) * gridSpacing;
         ctx.fillText('fs', samplingX, rect.height - 5);
       }
 
@@ -134,7 +136,7 @@ export function SpectrumAnalyzer({
           const maxMagnitude = Math.max(...displayResults.slice(0, sampleWindow).map(r => r.magnitude));
           const normalizedMagnitude = maxMagnitude > 0 ? magnitude / maxMagnitude : 0;
           
-          const x = i * gridSpacing + (gridSpacing - barWidth) / 2;
+          const x = padding + i * gridSpacing + (gridSpacing - barWidth) / 2;
           const barHeight = normalizedMagnitude * (rect.height - 35); // Leave space for labels
           
           // Color bars based on symmetry pairs
