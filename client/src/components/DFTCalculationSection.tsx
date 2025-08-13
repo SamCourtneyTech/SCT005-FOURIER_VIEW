@@ -222,7 +222,7 @@ export function DFTCalculationSection({
         {/* Windowed view indicator */}
         {isWindowedView && (
           <div className="bg-blue-900/30 border border-blue-600/50 rounded px-3 py-2 text-xs text-blue-200 mb-2">
-            (Samples {windowStart + 1}-{windowStart + visibleItems.length} of {twiddleFactors.length})
+            (Samples {visibleItems.length} of {twiddleFactors.length})
           </div>
         )}
         
