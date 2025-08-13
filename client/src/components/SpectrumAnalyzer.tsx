@@ -103,16 +103,7 @@ export function SpectrumAnalyzer({
         }
       }
 
-      // Draw frequency range labels under k values
-      ctx.fillStyle = '#888';
-      ctx.font = '10px Roboto Mono';
-      const frequencyRanges = ['20Hz', '100Hz', '1kHz', '10kHz', '20kHz'];
-      const maxDisplayRanges = Math.min(sampleWindow, frequencyRanges.length);
-      
-      for (let i = 0; i < maxDisplayRanges; i++) {
-        const x = (i + 0.5) * gridSpacing;
-        ctx.fillText(frequencyRanges[i], x, rect.height - 5);
-      }
+
 
       // Draw DFT results as frequency spectrum
       if (displayResults && displayResults.length >= sampleWindow) {
