@@ -76,13 +76,31 @@ export function SpectrumAnalyzer({
         ctx.stroke();
       }
 
-      // Draw frequency bin labels (k values)
+      // Draw frequency bin labels (k values) - only show quarter, half, three-quarter, and max
       ctx.fillStyle = '#666';
       ctx.font = '12px Roboto Mono';
       ctx.textAlign = 'center';
-      for (let i = 0; i < sampleWindow; i++) {
-        const x = (i + 0.5) * gridSpacing;
-        ctx.fillText(`k=${i}`, x, rect.height - 25);
+      
+      if (sampleWindow <= 8) {
+        // Show all k values for small windows
+        for (let i = 0; i < sampleWindow; i++) {
+          const x = (i + 0.5) * gridSpacing;
+          ctx.fillText(`k=${i}`, x, rect.height - 25);
+        }
+      } else {
+        // Show only quarter, half, three-quarter, and max for larger windows
+        const keyIndices = [
+          0, // Start
+          Math.floor(sampleWindow / 4), // Quarter
+          Math.floor(sampleWindow / 2), // Half
+          Math.floor(3 * sampleWindow / 4), // Three-quarter
+          sampleWindow - 1 // Max
+        ];
+        
+        for (const i of keyIndices) {
+          const x = (i + 0.5) * gridSpacing;
+          ctx.fillText(`k=${i}`, x, rect.height - 25);
+        }
       }
 
       // Draw frequency range labels under k values
@@ -127,12 +145,6 @@ export function SpectrumAnalyzer({
           }
           
           ctx.fillRect(x, rect.height - 35 - barHeight, barWidth, barHeight);
-          
-          // Draw magnitude values
-          ctx.fillStyle = '#AAA';
-          ctx.font = '10px Roboto Mono';
-          ctx.textAlign = 'center';
-          ctx.fillText(magnitude.toFixed(2), x + barWidth/2, rect.height - 40 - barHeight);
         }
       }
     };
@@ -155,11 +167,6 @@ export function SpectrumAnalyzer({
       <div className="flex items-center justify-between mb-4 flex-shrink-0">
         <div>
           <h2 className="text-lg font-semibold text-primary">Frequency Domain</h2>
-          {sampleWindow >= 8 && (
-            <div className="text-xs text-yellow-400 mt-1">
-              Notice: DFT symmetry for real signals - |X[k]| = |X[N-k]|
-            </div>
-          )}
           {sampleWindow >= 8 && (
             <div className="text-xs text-gray-400 mt-1">
               <span className="text-green-400">■</span> DC, 
