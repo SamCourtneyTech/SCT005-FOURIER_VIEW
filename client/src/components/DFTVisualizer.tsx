@@ -266,9 +266,9 @@ export function DFTVisualizer() {
         {/* 2. DFT Calculation Section (Inner Functions) */}
         <div className="h-96 flex-shrink-0">
           <div className="bg-surface border border-gray-700 rounded-lg p-4 flex flex-col gap-4 overflow-hidden h-full">
-            {sampleWindow > 1024 && (
-              <div className="bg-yellow-900/30 border border-yellow-600/50 rounded px-3 py-2 text-xs text-yellow-200 mb-2">
-                ⚡ Large sample window detected. Visualization limited to 1024 elements for optimal performance.
+            {sampleWindow > 16 && (
+              <div className="bg-blue-900/30 border border-blue-600/50 rounded px-3 py-2 text-xs text-blue-200 mb-2">
+                Windowed view: Displaying 16 items at a time for optimal performance.
               </div>
             )}
             <DFTCalculationSection
@@ -286,9 +286,9 @@ export function DFTVisualizer() {
         {/* 3. X[k] Summation Section */}
         <div className="h-96 flex-shrink-0">
           <div className="bg-surface border border-gray-700 rounded-lg p-4 flex flex-col gap-4 overflow-hidden h-full">
-            {sampleWindow > 256 && (
-              <div className="bg-yellow-900/30 border border-yellow-600/50 rounded px-3 py-2 text-xs text-yellow-200 mb-2">
-                ⚡ Visualization limited to 256 frequency bins for performance.
+            {sampleWindow > 16 && (
+              <div className="bg-blue-900/30 border border-blue-600/50 rounded px-3 py-2 text-xs text-blue-200 mb-2">
+                Windowed view: Displaying 16 items at a time for optimal performance.
               </div>
             )}
             <SummationSection
