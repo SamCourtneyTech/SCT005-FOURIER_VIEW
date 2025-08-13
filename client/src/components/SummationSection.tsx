@@ -249,7 +249,7 @@ export function SummationSection({
         {/* Windowed view indicator */}
         {isWindowedView && (
           <div className="bg-blue-900/30 border border-blue-600/50 rounded px-3 py-2 text-xs text-blue-200 mb-2">
-            Windowed view: Showing {visibleItems.length} of {dftResults.length} items (Bins {windowStart}-{windowStart + visibleItems.length - 1})
+            (Bins {windowStart}-{windowStart + visibleItems.length - 1} of {dftResults.length})
           </div>
         )}
         
