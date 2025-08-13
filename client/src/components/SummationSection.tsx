@@ -127,8 +127,8 @@ export function SummationSection({
         ctx.stroke();
       }
 
-      // Draw complex number visualization
-      const centerX = displayWidth / 2;
+      // Draw complex number visualization - align flush left
+      const centerX = displayWidth / 2 - 10; // Shift left to align with grid
       const centerY = displayHeight / 2;
       const scale = 15;
 
