@@ -92,7 +92,7 @@ export function DFTCalculationSection({
       // Set canvas size with device pixel ratio for crisp rendering
       const dpr = window.devicePixelRatio || 1;
       const displayWidth = 280;
-      const displayHeight = 60;
+      const displayHeight = 80;
       
       canvas.width = displayWidth * dpr;
       canvas.height = displayHeight * dpr;
@@ -198,7 +198,7 @@ export function DFTCalculationSection({
                 <canvas
                   ref={(el) => (canvasRefs.current[index] = el)}
                   width="280"
-                  height="60"
+                  height="80"
                   className="w-full visualization-canvas rounded text-xs"
                 />
                 <div className="flex justify-between mt-2 text-xs text-text-secondary font-mono">

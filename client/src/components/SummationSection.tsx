@@ -96,7 +96,7 @@ export function SummationSection({
       // Set canvas size with device pixel ratio for crisp rendering
       const dpr = window.devicePixelRatio || 1;
       const displayWidth = 280;
-      const displayHeight = 40;
+      const displayHeight = 60;
       
       canvas.width = displayWidth * dpr;
       canvas.height = displayHeight * dpr;
@@ -235,7 +235,7 @@ export function SummationSection({
                 <canvas
                   ref={(el) => (canvasRefs.current[k] = el)}
                   width="280"
-                  height="40"
+                  height="60"
                   className="w-full visualization-canvas rounded mt-2"
                 />
               </div>

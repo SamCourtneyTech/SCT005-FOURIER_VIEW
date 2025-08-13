@@ -33,6 +33,16 @@ export function useDFTCalculation(
   } | null>(null);
   const [hasInitializedForSampleWindow, setHasInitializedForSampleWindow] = useState(false);
 
+  // Add debouncing for sample window changes to prevent lag
+  useEffect(() => {
+    // Reset arrays immediately when sample window changes to prevent stale large arrays
+    if (dftResults.length > 0 && dftResults.length !== sampleWindow) {
+      setDftResults([]);
+      setTwiddleFactors([]);
+      setFrozenData(null);
+    }
+  }, [sampleWindow]);
+
   useEffect(() => {
     if (!analyserNode) return;
 
@@ -120,34 +130,46 @@ export function useDFTCalculation(
   // Initialize empty data structures when no audio is available but sample window is set
   useEffect(() => {
     if (!analyserNode && (dftResults.length === 0 || dftResults.length !== sampleWindow)) {
-      // Initialize with empty data to allow navigation
-      const emptyResults: DFTResult[] = [];
-      for (let k = 0; k < sampleWindow; k++) {
-        emptyResults.push({
-          real: 0,
-          imag: 0,
-          magnitude: 0,
-          phase: 0,
-        });
-      }
+      // Clear existing data first to prevent lag
+      setDftResults([]);
+      setTwiddleFactors([]);
       
-      // Initialize empty twiddle factors
-      const emptyTwiddleFactors: TwiddleFactor[] = [];
-      for (let n = 0; n < sampleWindow; n++) {
-        const angle = -2 * Math.PI * 0 * n / sampleWindow; // k=0 for initialization
-        emptyTwiddleFactors.push({
-          real: Math.cos(angle),
-          imag: Math.sin(angle),
-          amplitude: 0,
-          result: { real: 0, imag: 0 }
-        });
-      }
+      // Use timeout to prevent blocking the UI thread on large arrays
+      const initializeData = () => {
+        const emptyResults: DFTResult[] = [];
+        for (let k = 0; k < sampleWindow; k++) {
+          emptyResults.push({
+            real: 0,
+            imag: 0,
+            magnitude: 0,
+            phase: 0,
+          });
+        }
+        
+        const emptyTwiddleFactors: TwiddleFactor[] = [];
+        for (let n = 0; n < sampleWindow; n++) {
+          const angle = -2 * Math.PI * 0 * n / sampleWindow;
+          emptyTwiddleFactors.push({
+            real: Math.cos(angle),
+            imag: Math.sin(angle),
+            amplitude: 0,
+            result: { real: 0, imag: 0 }
+          });
+        }
+        
+        setDftResults(emptyResults);
+        setTwiddleFactors(emptyTwiddleFactors);
+        
+        if (!timeData) {
+          setTimeData(new Float32Array(sampleWindow));
+        }
+      };
       
-      setDftResults(emptyResults);
-      setTwiddleFactors(emptyTwiddleFactors);
-      
-      if (!timeData) {
-        setTimeData(new Float32Array(sampleWindow));
+      // Use setTimeout for large arrays to prevent UI blocking
+      if (sampleWindow > 512) {
+        setTimeout(initializeData, 0);
+      } else {
+        initializeData();
       }
     }
   }, [sampleWindow, analyserNode]);
