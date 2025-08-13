@@ -98,7 +98,6 @@ export function SpectrumAnalyzer({
 
       // Draw DFT results as frequency spectrum
       if (displayResults && displayResults.length >= sampleWindow) {
-        ctx.fillStyle = '#FF5722';
         const barWidth = gridSpacing * 0.8; // Leave some spacing between bars
         
         for (let i = 0; i < sampleWindow; i++) {
@@ -109,6 +108,24 @@ export function SpectrumAnalyzer({
           const x = i * gridSpacing + (gridSpacing - barWidth) / 2;
           const barHeight = normalizedMagnitude * (rect.height - 35); // Leave space for labels
           
+          // Color bars based on symmetry pairs
+          const symmetricIndex = sampleWindow - i;
+          const isSymmetricPair = i > 0 && i < sampleWindow/2 && symmetricIndex < sampleWindow;
+          const isNyquist = i === sampleWindow/2;
+          const isDC = i === 0;
+          
+          if (isDC) {
+            ctx.fillStyle = '#4CAF50'; // Green for DC
+          } else if (isNyquist) {
+            ctx.fillStyle = '#9C27B0'; // Purple for Nyquist
+          } else if (isSymmetricPair) {
+            ctx.fillStyle = '#2196F3'; // Blue for symmetric pairs
+          } else if (i > sampleWindow/2) {
+            ctx.fillStyle = '#2196F3'; // Blue for symmetric pairs (second half)
+          } else {
+            ctx.fillStyle = '#FF5722'; // Default orange
+          }
+          
           ctx.fillRect(x, rect.height - 35 - barHeight, barWidth, barHeight);
           
           // Draw magnitude values
@@ -116,7 +133,6 @@ export function SpectrumAnalyzer({
           ctx.font = '10px Roboto Mono';
           ctx.textAlign = 'center';
           ctx.fillText(magnitude.toFixed(2), x + barWidth/2, rect.height - 40 - barHeight);
-          ctx.fillStyle = '#FF5722';
         }
       }
     };
@@ -139,9 +155,16 @@ export function SpectrumAnalyzer({
       <div className="flex items-center justify-between mb-4 flex-shrink-0">
         <div>
           <h2 className="text-lg font-semibold text-primary">Frequency Domain</h2>
-          {sampleWindow > 8 && (
+          {sampleWindow >= 8 && (
             <div className="text-xs text-yellow-400 mt-1">
               Notice: DFT symmetry for real signals - |X[k]| = |X[N-k]|
+            </div>
+          )}
+          {sampleWindow >= 8 && (
+            <div className="text-xs text-gray-400 mt-1">
+              <span className="text-green-400">■</span> DC, 
+              <span className="text-blue-400">■</span> Symmetric pairs, 
+              <span className="text-purple-400">■</span> Nyquist
             </div>
           )}
         </div>
