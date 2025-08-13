@@ -30,7 +30,6 @@ export function DFTVisualizer() {
   const [sampleWindow, setSampleWindow] = useState(8);
   const [selectedFrequencyBin, setSelectedFrequencyBin] = useState(0);
   const [selectedExampleAudio, setSelectedExampleAudio] = useState<string>("full_song");
-  const [viewMode, setViewMode] = useState<"vector" | "projection">("vector");
   const [uploadedFileName, setUploadedFileName] = useState<string>("");
   const [currentAudioSource, setCurrentAudioSource] = useState<"example" | "uploaded">("example");
 
@@ -158,18 +157,7 @@ export function DFTVisualizer() {
                 <span className="text-xs whitespace-nowrap">(N={sampleWindow})</span>
               </div>
               
-              <div className="flex items-center gap-1 md:gap-2">
-                <span className="whitespace-nowrap">View:</span>
-                <Select value={viewMode} onValueChange={(value: "vector" | "projection") => setViewMode(value)}>
-                  <SelectTrigger className="bg-gray-800 border-gray-600 text-white text-xs md:text-sm w-24 md:w-32">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="vector">Vector</SelectItem>
-                    <SelectItem value="projection">Projection</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+
 
             </div>
           </div>
@@ -273,7 +261,6 @@ export function DFTVisualizer() {
               twiddleFactors={currentTwiddleFactors}
               currentSample={currentSample}
               isPlaying={isPlaying}
-              viewMode={viewMode}
             />
           </div>
         </div>
@@ -287,7 +274,6 @@ export function DFTVisualizer() {
               onSelectFrequencyBin={setSelectedFrequencyBin}
               sampleWindow={sampleWindow}
               isPlaying={isPlaying}
-              viewMode={viewMode}
             />
           </div>
         </div>

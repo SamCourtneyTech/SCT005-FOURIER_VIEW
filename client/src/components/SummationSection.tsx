@@ -16,7 +16,6 @@ interface SummationSectionProps {
   onSelectFrequencyBin: (bin: number) => void;
   sampleWindow: number;
   isPlaying?: boolean;
-  viewMode: "vector" | "projection";
 }
 
 export function SummationSection({
@@ -25,7 +24,6 @@ export function SummationSection({
   onSelectFrequencyBin,
   sampleWindow,
   isPlaying = true,
-  viewMode,
 }: SummationSectionProps) {
   const canvasRefs = useRef<(HTMLCanvasElement | null)[]>([]);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -191,7 +189,7 @@ export function SummationSection({
       <div className="flex items-center justify-between mb-4 flex-shrink-0">
         <h2 className="text-lg font-semibold text-primary">Summation Results</h2>
         <div className="text-xs text-text-secondary font-mono">
-          {viewMode === "vector" ? "X[k] = Σ x[n]W^kn" : "Frequency projections"}
+          X[k] = Σ x[n]W^kn
         </div>
       </div>
 

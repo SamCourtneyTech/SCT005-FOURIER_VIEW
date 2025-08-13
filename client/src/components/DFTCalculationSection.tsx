@@ -10,7 +10,6 @@ interface DFTCalculationSectionProps {
   twiddleFactors: { real: number; imag: number; amplitude: number; result: { real: number; imag: number } }[];
   currentSample: number;
   isPlaying?: boolean;
-  viewMode: "vector" | "projection";
 }
 
 export function DFTCalculationSection({
@@ -20,7 +19,6 @@ export function DFTCalculationSection({
   twiddleFactors,
   currentSample,
   isPlaying = true,
-  viewMode,
 }: DFTCalculationSectionProps) {
   const canvasRefs = useRef<(HTMLCanvasElement | null)[]>([]);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -175,7 +173,7 @@ export function DFTCalculationSection({
       ctx.fillText('W', vectorCenterX - 10, displayHeight - 5);
       ctx.fillText('Result', vectorCenterX + 50, displayHeight - 5);
     });
-  }, [visibleItems, isPlaying, selectedFrequencyBin, viewMode]);
+  }, [visibleItems, isPlaying, selectedFrequencyBin]);
 
   return (
     <div className="bg-surface border-r border-gray-700 p-4 flex flex-col h-full md:h-full overflow-hidden">
@@ -214,11 +212,7 @@ export function DFTCalculationSection({
                 <div className="flex justify-between mt-2 text-xs text-text-secondary font-mono">
                   <span>Amp: {factor.amplitude.toFixed(3)}</span>
                   <span>
-                    {viewMode === "vector" ? (
-                      <>Result: {factor.result.real.toFixed(3)} {factor.result.imag >= 0 ? '+' : ''} {factor.result.imag.toFixed(3)}i</>
-                    ) : (
-                      <>Phase: {((Math.atan2(factor.imag, factor.real) * 180) / Math.PI).toFixed(1)}°</>
-                    )}
+                    Result: {factor.result.real.toFixed(3)} {factor.result.imag >= 0 ? '+' : ''} {factor.result.imag.toFixed(3)}i
                   </span>
                 </div>
               </div>
