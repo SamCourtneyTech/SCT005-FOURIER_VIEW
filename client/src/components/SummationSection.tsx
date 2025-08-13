@@ -31,6 +31,7 @@ export function SummationSection({
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [jumpToFreqBin, setJumpToFreqBin] = useState<string>("");
   const [windowStart, setWindowStart] = useState(0);
+  const frozenDftResultsRef = useRef<DFTResult[]>([]);
   
   // Windowed view settings
   const INITIAL_LOAD_COUNT = 16;
@@ -67,24 +68,33 @@ export function SummationSection({
     setJumpToFreqBin(""); // Clear input after jump
   };
 
+  // Store current dftResults when playing for freezing on pause
+  useEffect(() => {
+    if (isPlaying && dftResults && dftResults.length >= sampleWindow) {
+      frozenDftResultsRef.current = [...dftResults];
+    }
+  }, [isPlaying, dftResults, sampleWindow]);
+
+  // Use frozen data when paused, live data when playing
+  const displayDftResults = isPlaying ? dftResults : frozenDftResultsRef.current;
+
   // Calculate which items to render based on windowed view
   const getVisibleItems = () => {
-    if (dftResults.length <= INITIAL_LOAD_COUNT) {
+    if (displayDftResults.length <= INITIAL_LOAD_COUNT) {
       // Show all items if we have 16 or fewer
-      return dftResults;
+      return displayDftResults;
     } else {
       // Show windowed view (16 items total)
-      const windowEnd = Math.min(windowStart + INITIAL_LOAD_COUNT, dftResults.length);
-      return dftResults.slice(windowStart, windowEnd);
+      const windowEnd = Math.min(windowStart + INITIAL_LOAD_COUNT, displayDftResults.length);
+      return displayDftResults.slice(windowStart, windowEnd);
     }
   };
 
   const visibleItems = getVisibleItems();
-  const isWindowedView = dftResults.length > INITIAL_LOAD_COUNT;
+  const isWindowedView = displayDftResults.length > INITIAL_LOAD_COUNT;
 
   useEffect(() => {
-    // Don't update canvases when paused (frozen)
-    if (!isPlaying) return;
+    // Always draw canvases, but use frozen data when paused
     
     visibleItems.forEach((result, index) => {
       const canvas = canvasRefs.current[index];
@@ -249,7 +259,7 @@ export function SummationSection({
         {/* Windowed view indicator */}
         {isWindowedView && (
           <div className="bg-blue-900/30 border border-blue-600/50 rounded px-3 py-2 text-xs text-blue-200 mb-2">
-            (Samples {visibleItems.length} of {dftResults.length})
+            (Samples {visibleItems.length} of {displayDftResults.length})
           </div>
         )}
         

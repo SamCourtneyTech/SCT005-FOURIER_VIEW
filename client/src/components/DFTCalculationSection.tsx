@@ -26,6 +26,7 @@ export function DFTCalculationSection({
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [jumpToSample, setJumpToSample] = useState<string>("");
   const [windowStart, setWindowStart] = useState(0);
+  const frozenTwiddleFactorsRef = useRef<{ real: number; imag: number; amplitude: number; result: { real: number; imag: number } }[]>([]);
   
   // Windowed view settings
   const INITIAL_LOAD_COUNT = 16;
@@ -63,24 +64,33 @@ export function DFTCalculationSection({
     setJumpToSample(""); // Clear input after jump
   };
 
+  // Store current twiddleFactors when playing for freezing on pause
+  useEffect(() => {
+    if (isPlaying && twiddleFactors && twiddleFactors.length >= sampleWindow) {
+      frozenTwiddleFactorsRef.current = [...twiddleFactors];
+    }
+  }, [isPlaying, twiddleFactors, sampleWindow]);
+
+  // Use frozen data when paused, live data when playing
+  const displayTwiddleFactors = isPlaying ? twiddleFactors : frozenTwiddleFactorsRef.current;
+
   // Calculate which items to render based on windowed view
   const getVisibleItems = () => {
-    if (twiddleFactors.length <= INITIAL_LOAD_COUNT) {
+    if (displayTwiddleFactors.length <= INITIAL_LOAD_COUNT) {
       // Show all items if we have 16 or fewer
-      return twiddleFactors;
+      return displayTwiddleFactors;
     } else {
       // Show windowed view (16 items total)
-      const windowEnd = Math.min(windowStart + INITIAL_LOAD_COUNT, twiddleFactors.length);
-      return twiddleFactors.slice(windowStart, windowEnd);
+      const windowEnd = Math.min(windowStart + INITIAL_LOAD_COUNT, displayTwiddleFactors.length);
+      return displayTwiddleFactors.slice(windowStart, windowEnd);
     }
   };
 
   const visibleItems = getVisibleItems();
-  const isWindowedView = twiddleFactors.length > INITIAL_LOAD_COUNT;
+  const isWindowedView = displayTwiddleFactors.length > INITIAL_LOAD_COUNT;
 
   useEffect(() => {
-    // Don't update canvases when paused (frozen)
-    if (!isPlaying) return;
+    // Always draw canvases, but use frozen data when paused
     
     visibleItems.forEach((factor, index) => {
       const canvas = canvasRefs.current[index];
@@ -222,7 +232,7 @@ export function DFTCalculationSection({
         {/* Windowed view indicator */}
         {isWindowedView && (
           <div className="bg-blue-900/30 border border-blue-600/50 rounded px-3 py-2 text-xs text-blue-200 mb-2">
-            (Samples {visibleItems.length} of {twiddleFactors.length})
+            (Samples {visibleItems.length} of {displayTwiddleFactors.length})
           </div>
         )}
         
