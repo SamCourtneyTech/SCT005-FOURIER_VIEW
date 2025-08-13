@@ -257,7 +257,7 @@ export function DFTCalculationSection({
               }}
               min="1"
               max={sampleWindow}
-              placeholder="Enter sample #"
+              placeholder="i"
               className="w-12 h-6 text-xs bg-gray-800 border-gray-600 text-white text-center px-1"
             />
             <span>of {sampleWindow}</span>
