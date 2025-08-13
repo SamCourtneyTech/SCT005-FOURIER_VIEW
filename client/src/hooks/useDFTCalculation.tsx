@@ -31,6 +31,7 @@ export function useDFTCalculation(
     dftResults: DFTResult[];
     twiddleFactors: TwiddleFactor[];
   } | null>(null);
+  const [hasInitializedForSampleWindow, setHasInitializedForSampleWindow] = useState(false);
 
   useEffect(() => {
     if (!analyserNode) return;
@@ -115,6 +116,41 @@ export function useDFTCalculation(
   }, [analyserNode, sampleWindow, selectedFrequencyBin, isPlaying, frozenData]);
 
   // Don't clear frozen data when resuming - keep the last captured state
+
+  // Initialize empty data structures when no audio is available but sample window is set
+  useEffect(() => {
+    if (!analyserNode && (dftResults.length === 0 || dftResults.length !== sampleWindow)) {
+      // Initialize with empty data to allow navigation
+      const emptyResults: DFTResult[] = [];
+      for (let k = 0; k < sampleWindow; k++) {
+        emptyResults.push({
+          real: 0,
+          imag: 0,
+          magnitude: 0,
+          phase: 0,
+        });
+      }
+      
+      // Initialize empty twiddle factors
+      const emptyTwiddleFactors: TwiddleFactor[] = [];
+      for (let n = 0; n < sampleWindow; n++) {
+        const angle = -2 * Math.PI * 0 * n / sampleWindow; // k=0 for initialization
+        emptyTwiddleFactors.push({
+          real: Math.cos(angle),
+          imag: Math.sin(angle),
+          amplitude: 0,
+          result: { real: 0, imag: 0 }
+        });
+      }
+      
+      setDftResults(emptyResults);
+      setTwiddleFactors(emptyTwiddleFactors);
+      
+      if (!timeData) {
+        setTimeData(new Float32Array(sampleWindow));
+      }
+    }
+  }, [sampleWindow, analyserNode]);
 
   // Return frozen data if paused, otherwise return live data
   const currentData = !isPlaying && frozenData ? {
