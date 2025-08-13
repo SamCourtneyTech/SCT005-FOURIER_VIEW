@@ -266,11 +266,6 @@ export function DFTVisualizer() {
         {/* 2. DFT Calculation Section (Inner Functions) */}
         <div className="h-[500px] flex-shrink-0">
           <div className="bg-surface border border-gray-700 rounded-lg p-4 flex flex-col gap-4 overflow-hidden h-full">
-            {sampleWindow > 16 && (
-              <div className="bg-blue-900/30 border border-blue-600/50 rounded px-3 py-2 text-xs text-blue-200 mb-2">
-                Windowed view: Displaying 16 items at a time for optimal performance.
-              </div>
-            )}
             <DFTCalculationSection
               sampleWindow={sampleWindow}
               selectedFrequencyBin={selectedFrequencyBin}
@@ -286,11 +281,6 @@ export function DFTVisualizer() {
         {/* 3. X[k] Summation Section */}
         <div className="h-[500px] flex-shrink-0">
           <div className="bg-surface border border-gray-700 rounded-lg p-4 flex flex-col gap-4 overflow-hidden h-full">
-            {sampleWindow > 16 && (
-              <div className="bg-blue-900/30 border border-blue-600/50 rounded px-3 py-2 text-xs text-blue-200 mb-2">
-                Windowed view: Displaying 16 items at a time for optimal performance.
-              </div>
-            )}
             <SummationSection
               dftResults={currentDftResults}
               selectedFrequencyBin={selectedFrequencyBin}
