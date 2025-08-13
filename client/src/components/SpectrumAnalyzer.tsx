@@ -103,7 +103,27 @@ export function SpectrumAnalyzer({
         }
       }
 
-
+      // Draw fixed frequency labels (0Hz, fn, fs) below k values
+      ctx.fillStyle = '#888';
+      ctx.font = '10px Roboto Mono';
+      ctx.textAlign = 'center';
+      
+      // 0Hz at k=0
+      const zeroHzX = (0 + 0.5) * gridSpacing;
+      ctx.fillText('0Hz', zeroHzX, rect.height - 5);
+      
+      // fn (Nyquist frequency) at k=N/2
+      if (sampleWindow > 2) {
+        const nyquistIndex = Math.floor(sampleWindow / 2);
+        const nyquistX = (nyquistIndex + 0.5) * gridSpacing;
+        ctx.fillText('fn', nyquistX, rect.height - 5);
+      }
+      
+      // fs (sampling frequency) at k=N-1
+      if (sampleWindow > 1) {
+        const samplingX = (sampleWindow - 1 + 0.5) * gridSpacing;
+        ctx.fillText('fs', samplingX, rect.height - 5);
+      }
 
       // Draw DFT results as frequency spectrum
       if (displayResults && displayResults.length >= sampleWindow) {
