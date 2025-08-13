@@ -55,8 +55,9 @@ export function SummationSection({
     if (!isNaN(binNum) && binNum >= 0 && binNum < sampleWindow) {
       // If we have more than INITIAL_LOAD_COUNT items, use windowed view
       if (dftResults.length > INITIAL_LOAD_COUNT) {
-        // Calculate window start (target index - 8, but keep within bounds)
-        const newWindowStart = Math.max(0, Math.min(binNum - BUFFER_SIZE, dftResults.length - WINDOW_SIZE));
+        // Center the target index: 7 before + target + 8 after = 16 total
+        const beforeCount = 7;
+        const newWindowStart = Math.max(0, Math.min(binNum - beforeCount, dftResults.length - INITIAL_LOAD_COUNT));
         setWindowStart(newWindowStart);
       } else {
         scrollToFrequencyBin(binNum);
@@ -72,8 +73,8 @@ export function SummationSection({
       // Show all items if we have 16 or fewer
       return dftResults;
     } else {
-      // Show windowed view (17 items: center + 8 before + 8 after)
-      const windowEnd = Math.min(windowStart + WINDOW_SIZE, dftResults.length);
+      // Show windowed view (16 items total)
+      const windowEnd = Math.min(windowStart + INITIAL_LOAD_COUNT, dftResults.length);
       return dftResults.slice(windowStart, windowEnd);
     }
   };
@@ -248,7 +249,7 @@ export function SummationSection({
         {/* Windowed view indicator */}
         {isWindowedView && (
           <div className="bg-blue-900/30 border border-blue-600/50 rounded px-3 py-2 text-xs text-blue-200 mb-2">
-            Windowed view: Showing {visibleItems.length} of {dftResults.length} items (Window: {windowStart}-{windowStart + visibleItems.length - 1})
+            Windowed view: Showing {visibleItems.length} of {dftResults.length} items (Bins {windowStart}-{windowStart + visibleItems.length - 1})
           </div>
         )}
         

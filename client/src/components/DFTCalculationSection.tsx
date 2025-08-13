@@ -52,8 +52,9 @@ export function DFTCalculationSection({
       
       // If we have more than INITIAL_LOAD_COUNT items, use windowed view
       if (twiddleFactors.length > INITIAL_LOAD_COUNT) {
-        // Calculate window start (target index - 8, but keep within bounds)
-        const newWindowStart = Math.max(0, Math.min(targetIndex - BUFFER_SIZE, twiddleFactors.length - WINDOW_SIZE));
+        // Center the target index: 7 before + target + 8 after = 16 total
+        const beforeCount = 7;
+        const newWindowStart = Math.max(0, Math.min(targetIndex - beforeCount, twiddleFactors.length - INITIAL_LOAD_COUNT));
         setWindowStart(newWindowStart);
       } else {
         scrollToSample(targetIndex);
@@ -68,8 +69,8 @@ export function DFTCalculationSection({
       // Show all items if we have 16 or fewer
       return twiddleFactors;
     } else {
-      // Show windowed view (17 items: center + 8 before + 8 after)
-      const windowEnd = Math.min(windowStart + WINDOW_SIZE, twiddleFactors.length);
+      // Show windowed view (16 items total)
+      const windowEnd = Math.min(windowStart + INITIAL_LOAD_COUNT, twiddleFactors.length);
       return twiddleFactors.slice(windowStart, windowEnd);
     }
   };
@@ -221,7 +222,7 @@ export function DFTCalculationSection({
         {/* Windowed view indicator */}
         {isWindowedView && (
           <div className="bg-blue-900/30 border border-blue-600/50 rounded px-3 py-2 text-xs text-blue-200 mb-2">
-            Windowed view: Showing {visibleItems.length} of {twiddleFactors.length} items (Window: {windowStart + 1}-{windowStart + visibleItems.length})
+            Windowed view: Showing {visibleItems.length} of {twiddleFactors.length} items (Samples {windowStart + 1}-{windowStart + visibleItems.length})
           </div>
         )}
         
