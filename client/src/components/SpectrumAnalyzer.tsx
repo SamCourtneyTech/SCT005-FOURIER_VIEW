@@ -137,7 +137,14 @@ export function SpectrumAnalyzer({
   return (
     <div className="bg-surface p-4 flex flex-col h-full md:h-full overflow-hidden">
       <div className="flex items-center justify-between mb-4 flex-shrink-0">
-        <h2 className="text-lg font-semibold text-primary">Frequency Domain</h2>
+        <div>
+          <h2 className="text-lg font-semibold text-primary">Frequency Domain</h2>
+          {sampleWindow > 8 && (
+            <div className="text-xs text-yellow-400 mt-1">
+              Notice: DFT symmetry for real signals - |X[k]| = |X[N-k]|
+            </div>
+          )}
+        </div>
         <div className="flex items-center space-x-2 text-xs text-text-secondary">
           <span>|X[k]|</span>
           <Button
