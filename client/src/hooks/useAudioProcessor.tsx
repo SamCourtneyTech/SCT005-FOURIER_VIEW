@@ -91,14 +91,22 @@ export function useAudioProcessor() {
     // Generate different types of audio based on selection
     switch (exampleType) {
       case 'full_song':
-        // Mix of frequencies for a "song-like" sound
-        for (let i = 0; i < frameCount; i++) {
-          const t = i / sampleRate;
-          channelData[i] = 
-            0.3 * Math.sin(2 * Math.PI * 440 * t) +  // A4
-            0.2 * Math.sin(2 * Math.PI * 554.37 * t) + // C#5
-            0.1 * Math.sin(2 * Math.PI * 659.25 * t) +  // E5
-            0.05 * Math.sin(2 * Math.PI * 220 * t);     // A3
+        // Load uploaded full song MP3 file
+        try {
+          const fullSongUrl = new URL('@assets/fv_full_song_1755138764578.mp3', import.meta.url).href;
+          await loadAudioFile(fullSongUrl);
+          return; // Return early since loadAudioFile handles the buffer setup
+        } catch (error) {
+          console.error('Error loading full song file, falling back to synthetic:', error);
+          // Fallback to synthetic song-like sound
+          for (let i = 0; i < frameCount; i++) {
+            const t = i / sampleRate;
+            channelData[i] = 
+              0.3 * Math.sin(2 * Math.PI * 440 * t) +  // A4
+              0.2 * Math.sin(2 * Math.PI * 554.37 * t) + // C#5
+              0.1 * Math.sin(2 * Math.PI * 659.25 * t) +  // E5
+              0.05 * Math.sin(2 * Math.PI * 220 * t);     // A3
+          }
         }
         break;
       case 'drums':

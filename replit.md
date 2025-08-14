@@ -9,7 +9,7 @@ The core functionality includes audio file upload and playback, real-time audio 
 Preferred communication style: Simple, everyday language.
 Layout preference: Unified vertical layout for both desktop and mobile (amplitude → inner functions → X[k] → frequency domain).
 Visualization preference: Show empty visualizations on launch instead of grey sections until audio plays.
-Audio preferences: Custom MP3 files for all example audio options instead of synthetic generation (January 2025).
+Audio preferences: Custom MP3 files for all 8 example audio options instead of synthetic generation - full song, drums, vocal, bass, synth, electric guitar, piano, acoustic guitar (January 2025).
 
 # System Architecture
 
