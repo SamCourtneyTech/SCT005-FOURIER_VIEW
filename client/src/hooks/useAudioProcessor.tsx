@@ -19,6 +19,7 @@ export function useAudioProcessor() {
   
   const startTimeRef = useRef<number>(0);
   const pauseTimeRef = useRef<number>(0);
+  const wasPlayingRef = useRef<boolean>(false);
 
   // Initialize audio context
   const initializeAudioContext = useCallback(async () => {
@@ -63,8 +64,9 @@ export function useAudioProcessor() {
       setDuration(decodedBuffer.duration);
       setCurrentTime(0);
       setPlaybackProgress(0);
-      // Only reset pause time if we're not currently playing
-      if (!isPlaying) {
+      // Only reset pause time if we're switching to a different audio file
+      // Don't reset if we were just paused
+      if (!wasPlayingRef.current) {
         pauseTimeRef.current = 0;
       }
     } catch (error) {
@@ -263,8 +265,9 @@ export function useAudioProcessor() {
     setDuration(buffer.duration);
     setCurrentTime(0);
     setPlaybackProgress(0);
-    // Only reset pause time if we're not currently playing
-    if (!isPlaying) {
+    // Only reset pause time if we're switching to a different audio file
+    // Don't reset if we were just paused
+    if (!wasPlayingRef.current) {
       pauseTimeRef.current = 0;
     }
   }, [audioContext, initializeAudioContext]);
@@ -291,6 +294,7 @@ export function useAudioProcessor() {
       // Store the current playback position
       const currentPos = audioContext.currentTime - startTimeRef.current;
       pauseTimeRef.current = Math.max(0, Math.min(currentPos, audioBuffer.duration));
+      wasPlayingRef.current = true; // Mark that we were playing before pause
       console.log('Pausing at time:', pauseTimeRef.current, 'seconds');
       setIsPlaying(false);
     } else {
@@ -300,15 +304,18 @@ export function useAudioProcessor() {
       source.connect(analyserNode);
       
       const resumeTime = pauseTimeRef.current;
-      console.log('Resuming from time:', resumeTime, 'seconds');
+      console.log('Resuming from time:', resumeTime, 'seconds (pauseTimeRef.current =', pauseTimeRef.current, ')');
+      console.log('Audio buffer duration:', audioBuffer.duration, 'wasPlayingRef:', wasPlayingRef.current);
       
       if (resumeTime >= audioBuffer.duration) {
         // Reset to beginning if at end
+        console.log('Resetting to beginning');
         pauseTimeRef.current = 0;
         source.start(0, 0);
         startTimeRef.current = audioContext.currentTime;
       } else {
         // Resume from stored position
+        console.log('Actually starting from offset:', resumeTime);
         source.start(0, resumeTime);
         startTimeRef.current = audioContext.currentTime - resumeTime;
       }
@@ -317,12 +324,14 @@ export function useAudioProcessor() {
         setIsPlaying(false);
         setSourceNode(null);
         pauseTimeRef.current = 0;
+        wasPlayingRef.current = false;
         setCurrentTime(0);
         setPlaybackProgress(0);
       };
       
       setSourceNode(source);
       setIsPlaying(true);
+      wasPlayingRef.current = false; // Clear the pause flag
     }
   }, [audioContext, audioBuffer, analyserNode, sourceNode, isPlaying]);
 
@@ -336,6 +345,7 @@ export function useAudioProcessor() {
     setCurrentTime(0);
     setPlaybackProgress(0);
     pauseTimeRef.current = 0;
+    wasPlayingRef.current = false;
   }, [sourceNode]);
 
   // Update playback time and audio analysis
