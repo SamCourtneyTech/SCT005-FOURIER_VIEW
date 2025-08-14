@@ -390,6 +390,7 @@ export function useAudioProcessor() {
       setPausedAt(clampedPosition);
       setCurrentTime(clampedPosition);
       setPlaybackProgress((clampedPosition / audioBuffer.duration) * 100);
+      setPlaybackOffset(clampedPosition); // Update offset for proper resume
       if (timerFrozen) {
         setFrozenTime(clampedPosition);
       }

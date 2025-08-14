@@ -128,6 +128,7 @@ export function DFTVisualizer() {
           // Fallback to direct URL if server endpoint fails
           try {
             await loadAudioFile(uploadURL);
+            setUploadedFileURL(uploadURL); // Update to working URL
             console.log('Fallback: loaded audio from signed URL');
           } catch (fallbackError) {
             console.error('Both server and direct URL failed:', fallbackError);
@@ -140,7 +141,7 @@ export function DFTVisualizer() {
   const handleExampleAudioChange = async (value: string) => {
     setSelectedExampleAudio(value);
     setCurrentAudioSource("example");
-    setUploadedFileName(""); // Clear uploaded selection
+    // Don't clear uploaded filename, keep it available for reselection
     if (value) {
       await loadExampleAudio(value);
     }
@@ -203,20 +204,27 @@ export function DFTVisualizer() {
               >
                 <div className="flex items-center space-x-2">
                   <Upload className="w-4 h-4" />
-                  <span>Upload Audio</span>
+                  <span>{uploadedFileName ? "Replace Audio" : "Upload Audio"}</span>
                 </div>
               </ObjectUploader>
 
               {uploadedFileName && (
                 <div className="flex items-center space-x-2">
-                  <span 
-                    className={`text-xs px-3 py-1 max-w-[150px] truncate border rounded ${
-                      currentAudioSource === "uploaded" ? "border-primary text-primary" : "border-gray-600 text-gray-400"
-                    }`}
+                  <Button
+                    variant={currentAudioSource === "uploaded" ? "default" : "ghost"}
+                    size="sm"
+                    onClick={async () => {
+                      setCurrentAudioSource("uploaded");
+                      setSelectedExampleAudio(""); // Clear example selection
+                      if (uploadedFileURL) {
+                        await loadAudioFile(uploadedFileURL);
+                      }
+                    }}
+                    className="text-xs px-3 py-1 max-w-[150px] truncate"
                     title={uploadedFileName}
                   >
                     📁 {uploadedFileName.length > 15 ? `${uploadedFileName.substring(0, 12)}...` : uploadedFileName}
-                  </span>
+                  </Button>
                 </div>
               )}
 
