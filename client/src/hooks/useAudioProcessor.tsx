@@ -409,9 +409,9 @@ export function useAudioProcessor() {
     audioContext,
     analyserNode,
     isPlaying,
-    currentTime: isPlaying ? currentTime : pausedAt, // Show paused time when not playing
+    currentTime: isPlaying ? currentTime : (pausedAt || currentTime), // Show paused time or current time when not playing
     duration,
-    playbackProgress: isPlaying ? playbackProgress : (pausedAt / duration) * 100, // Show paused progress when not playing
+    playbackProgress: isPlaying ? playbackProgress : ((pausedAt || currentTime) / duration) * 100, // Show paused progress when not playing
     currentAmplitude,
     timeData,
     dominantFreq,
