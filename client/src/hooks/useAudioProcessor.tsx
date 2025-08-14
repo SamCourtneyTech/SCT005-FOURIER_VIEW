@@ -182,18 +182,26 @@ export function useAudioProcessor() {
         }
         break;
       case 'acoustic_guitar':
-        // Acoustic guitar simulation
-        for (let i = 0; i < frameCount; i++) {
-          const t = i / sampleRate;
-          const fundamentalFreq = 196; // G string
-          let signal = 0.5 * Math.sin(2 * Math.PI * fundamentalFreq * t);
-          // Add harmonics for acoustic guitar timbre
-          signal += 0.3 * Math.sin(2 * Math.PI * fundamentalFreq * 2 * t);
-          signal += 0.15 * Math.sin(2 * Math.PI * fundamentalFreq * 3 * t);
-          signal += 0.1 * Math.sin(2 * Math.PI * fundamentalFreq * 4 * t);
-          // Apply gentle envelope
-          const envelope = Math.exp(-t * 0.5);
-          channelData[i] = signal * envelope * 0.6;
+        // Load uploaded acoustic guitar MP3 file
+        try {
+          const acousticGuitarUrl = new URL('@assets/FV_ac_guitar_1755138282773.mp3', import.meta.url).href;
+          await loadAudioFile(acousticGuitarUrl);
+          return; // Return early since loadAudioFile handles the buffer setup
+        } catch (error) {
+          console.error('Error loading acoustic guitar file, falling back to synthetic:', error);
+          // Fallback to synthetic acoustic guitar sound
+          for (let i = 0; i < frameCount; i++) {
+            const t = i / sampleRate;
+            const fundamentalFreq = 196; // G string
+            let signal = 0.5 * Math.sin(2 * Math.PI * fundamentalFreq * t);
+            // Add harmonics for acoustic guitar timbre
+            signal += 0.3 * Math.sin(2 * Math.PI * fundamentalFreq * 2 * t);
+            signal += 0.15 * Math.sin(2 * Math.PI * fundamentalFreq * 3 * t);
+            signal += 0.1 * Math.sin(2 * Math.PI * fundamentalFreq * 4 * t);
+            // Apply gentle envelope
+            const envelope = Math.exp(-t * 0.5);
+            channelData[i] = signal * envelope * 0.6;
+          }
         }
         break;
       case 'vocal':
