@@ -132,7 +132,7 @@ export function useAudioProcessor() {
       case 'piano':
         // Load uploaded piano MP3 file
         try {
-          const pianoUrl = new URL('@assets/FV_Piano_1755136860063.mp3', import.meta.url).href;
+          const pianoUrl = new URL('@assets/fv_piano_normalized_1755137880955.mp3', import.meta.url).href;
           await loadAudioFile(pianoUrl);
           return; // Return early since loadAudioFile handles the buffer setup
         } catch (error) {
