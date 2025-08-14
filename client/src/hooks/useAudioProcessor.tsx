@@ -115,10 +115,18 @@ export function useAudioProcessor() {
         }
         break;
       case 'bass':
-        // Low frequency bass line
-        for (let i = 0; i < frameCount; i++) {
-          const t = i / sampleRate;
-          channelData[i] = 0.6 * Math.sin(2 * Math.PI * 110 * t) * (1 + 0.3 * Math.sin(2 * Math.PI * 2 * t));
+        // Load uploaded bass MP3 file
+        try {
+          const bassUrl = new URL('@assets/fv_bass_1755138681956.mp3', import.meta.url).href;
+          await loadAudioFile(bassUrl);
+          return; // Return early since loadAudioFile handles the buffer setup
+        } catch (error) {
+          console.error('Error loading bass file, falling back to synthetic:', error);
+          // Fallback to synthetic bass sound
+          for (let i = 0; i < frameCount; i++) {
+            const t = i / sampleRate;
+            channelData[i] = 0.6 * Math.sin(2 * Math.PI * 110 * t) * (1 + 0.3 * Math.sin(2 * Math.PI * 2 * t));
+          }
         }
         break;
       case 'synth':
