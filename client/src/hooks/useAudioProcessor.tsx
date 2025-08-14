@@ -150,6 +150,56 @@ export function useAudioProcessor() {
           }
         }
         break;
+      case 'electric_guitar':
+        // Load uploaded electric guitar MP3 file
+        try {
+          const guitarUrl = new URL('@assets/FV_ec_guitar_1755137041080.mp3', import.meta.url).href;
+          await loadAudioFile(guitarUrl);
+          return; // Return early since loadAudioFile handles the buffer setup
+        } catch (error) {
+          console.error('Error loading electric guitar file, falling back to synthetic:', error);
+          // Fallback to synthetic electric guitar sound
+          for (let i = 0; i < frameCount; i++) {
+            const t = i / sampleRate;
+            const fundamentalFreq = 82.41; // Low E string
+            const distortion = 0.7;
+            let signal = 0.6 * Math.sin(2 * Math.PI * fundamentalFreq * t);
+            // Add harmonics for guitar-like timbre
+            signal += 0.3 * Math.sin(2 * Math.PI * fundamentalFreq * 2 * t);
+            signal += 0.2 * Math.sin(2 * Math.PI * fundamentalFreq * 3 * t);
+            // Simple distortion effect
+            signal = Math.tanh(signal * distortion);
+            channelData[i] = signal * 0.5;
+          }
+        }
+        break;
+      case 'acoustic_guitar':
+        // Acoustic guitar simulation
+        for (let i = 0; i < frameCount; i++) {
+          const t = i / sampleRate;
+          const fundamentalFreq = 196; // G string
+          let signal = 0.5 * Math.sin(2 * Math.PI * fundamentalFreq * t);
+          // Add harmonics for acoustic guitar timbre
+          signal += 0.3 * Math.sin(2 * Math.PI * fundamentalFreq * 2 * t);
+          signal += 0.15 * Math.sin(2 * Math.PI * fundamentalFreq * 3 * t);
+          signal += 0.1 * Math.sin(2 * Math.PI * fundamentalFreq * 4 * t);
+          // Apply gentle envelope
+          const envelope = Math.exp(-t * 0.5);
+          channelData[i] = signal * envelope * 0.6;
+        }
+        break;
+      case 'vocal':
+        // Vocal-like formant synthesis
+        for (let i = 0; i < frameCount; i++) {
+          const t = i / sampleRate;
+          const fundamentalFreq = 220; // A3
+          let signal = 0.4 * Math.sin(2 * Math.PI * fundamentalFreq * t);
+          // Add formant frequencies typical of vowels
+          signal += 0.2 * Math.sin(2 * Math.PI * 800 * t); // First formant
+          signal += 0.1 * Math.sin(2 * Math.PI * 1200 * t); // Second formant
+          channelData[i] = signal * 0.7;
+        }
+        break;
       default:
         // Simple sine wave
         for (let i = 0; i < frameCount; i++) {
