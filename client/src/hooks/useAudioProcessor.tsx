@@ -1,19 +1,14 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from "react";
 
 export function useAudioProcessor() {
   const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
-  const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null);
   const [analyserNode, setAnalyserNode] = useState<AnalyserNode | null>(null);
+  const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null);
   const [sourceNode, setSourceNode] = useState<AudioBufferSourceNode | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [playbackProgress, setPlaybackProgress] = useState(0);
-  const [pausedAt, setPausedAt] = useState(0);
-  const [audioStartTime, setAudioStartTime] = useState(0);
-  const [playbackOffset, setPlaybackOffset] = useState(0);
-  
-  // Audio analysis states
   const [currentAmplitude, setCurrentAmplitude] = useState(0);
   const [timeData, setTimeData] = useState<Float32Array | null>(null);
   const [dominantFreq, setDominantFreq] = useState(0);
@@ -21,39 +16,39 @@ export function useAudioProcessor() {
   const [peakFrequency, setPeakFrequency] = useState(0);
   const [peakMagnitude, setPeakMagnitude] = useState(0);
   const [frequencyResolution, setFrequencyResolution] = useState(0);
+  
+  const [pausedAt, setPausedAt] = useState<number>(0);
+  const [audioStartTime, setAudioStartTime] = useState<number>(0);
+  const [playbackOffset, setPlaybackOffset] = useState<number>(0);
+  const [timerFrozen, setTimerFrozen] = useState<boolean>(false);
+  const [frozenTime, setFrozenTime] = useState<number>(0);
 
-  const animationRef = useRef<number>();
-
+  // Initialize audio context
   const initializeAudioContext = useCallback(async () => {
     if (!audioContext) {
       const ctx = new AudioContext();
-      if (ctx.state === 'suspended') {
-        await ctx.resume();
-      }
-      setAudioContext(ctx);
-      setSampleRate(ctx.sampleRate);
-      
       const analyser = ctx.createAnalyser();
       analyser.fftSize = 2048;
       analyser.connect(ctx.destination);
+      
+      setAudioContext(ctx);
       setAnalyserNode(analyser);
+      setSampleRate(ctx.sampleRate);
       setFrequencyResolution(ctx.sampleRate / analyser.fftSize);
     }
   }, [audioContext]);
 
-  // Stop any existing audio
+  // Stop any existing audio before starting new audio
   const stopExistingAudio = useCallback(() => {
     if (sourceNode) {
       sourceNode.stop();
       setSourceNode(null);
     }
     setIsPlaying(false);
-    if (animationRef.current) {
-      cancelAnimationFrame(animationRef.current);
-    }
+    setTimerFrozen(false);
   }, [sourceNode]);
 
-  // Load audio file
+  // Load audio file from URL with better M4A support
   const loadAudioFile = useCallback(async (url: string) => {
     await initializeAudioContext();
     if (!audioContext) return;
@@ -62,8 +57,12 @@ export function useAudioProcessor() {
       const response = await fetch(url);
       const arrayBuffer = await response.arrayBuffer();
       
+      // Try to decode audio data with comprehensive error handling
       const decodedBuffer = await audioContext.decodeAudioData(arrayBuffer).catch((error) => {
         console.error('Audio decoding error:', error);
+        console.error('Error details:', error.message);
+        
+        // More specific error messages based on common issues
         if (error.message.includes('WEBM') || error.message.includes('M4A') || error.message.includes('AAC')) {
           throw new Error('M4A/AAC format not fully supported. Please try MP3, WAV, or OGG format.');
         } else if (error.message.includes('DRM') || error.message.includes('protected')) {
@@ -73,6 +72,7 @@ export function useAudioProcessor() {
         }
       });
       
+      // Stop any existing audio first
       stopExistingAudio();
       
       setAudioBuffer(decodedBuffer);
@@ -81,70 +81,262 @@ export function useAudioProcessor() {
       setPlaybackProgress(0);
       setPausedAt(0);
       setPlaybackOffset(0);
+      setTimerFrozen(false);
+      setFrozenTime(0);
     } catch (error) {
       console.error('Error loading audio file:', error);
+      // Show user-friendly error for unsupported formats
       const errorMessage = error instanceof Error ? error.message : 'Could not load audio file. Please try MP3, WAV, or OGG format.';
       alert(errorMessage);
     }
   }, [audioContext, initializeAudioContext, stopExistingAudio]);
 
-  // Load example audio from attached assets
-  const loadExampleAudio = useCallback(async (audioType: string) => {
-    await initializeAudioContext();
-    if (!audioContext) return;
-
-    // Map to actual audio file URLs
-    const audioFiles: Record<string, string> = {
-      'full_song': '/attached_assets/fv_full_song_1755138764578.mp3',
-      'drums': '/attached_assets/fv_drums_1755138718109.mp3', 
-      'vocal': '/attached_assets/fv_vocal_1755138621004.mp3',
-      'bass': '/attached_assets/fv_bass_1755138681956.mp3',
-      'synth': '/attached_assets/fv_synth_1755138233942.mp3',
-      'electric_guitar': '/attached_assets/FV_ec_guitar_1755137041080.mp3',
-      'acoustic_guitar': '/attached_assets/FV_ac_guitar_1755138282773.mp3',
-      'piano': '/attached_assets/fv_piano_normalized_1755137880955.mp3'
-    };
-
-    const audioUrl = audioFiles[audioType];
-    if (audioUrl) {
-      await loadAudioFile(audioUrl);
+  // Generate example audio programmatically for demonstration
+  const loadExampleAudio = useCallback(async (exampleType: string) => {
+    // Ensure audio context is initialized first, especially for mobile
+    if (!audioContext) {
+      await initializeAudioContext();
+      return; // Return and let the effect handle the loading once context is ready
     }
-  }, [audioContext, initializeAudioContext, loadAudioFile]);
+
+    const sampleRate = audioContext.sampleRate;
+    const duration = 3; // 3 seconds
+    const frameCount = sampleRate * duration;
+    
+    // Create an audio buffer
+    const buffer = audioContext.createBuffer(1, frameCount, sampleRate);
+    const channelData = buffer.getChannelData(0);
+
+    // Generate different types of audio based on selection
+    switch (exampleType) {
+      case 'full_song':
+        // Load uploaded full song MP3 file
+        try {
+          const fullSongUrl = new URL('@assets/fv_full_song_1755138764578.mp3', import.meta.url).href;
+          await loadAudioFile(fullSongUrl);
+          return; // Return early since loadAudioFile handles the buffer setup
+        } catch (error) {
+          console.error('Error loading full song file, falling back to synthetic:', error);
+          // Fallback to synthetic song-like sound
+          for (let i = 0; i < frameCount; i++) {
+            const t = i / sampleRate;
+            channelData[i] = 
+              0.3 * Math.sin(2 * Math.PI * 440 * t) +  // A4
+              0.2 * Math.sin(2 * Math.PI * 554.37 * t) + // C#5
+              0.1 * Math.sin(2 * Math.PI * 659.25 * t) +  // E5
+              0.05 * Math.sin(2 * Math.PI * 220 * t);     // A3
+          }
+        }
+        break;
+      case 'drums':
+        // Load uploaded drums MP3 file
+        try {
+          const drumsUrl = new URL('@assets/fv_drums_1755138718109.mp3', import.meta.url).href;
+          await loadAudioFile(drumsUrl);
+          return; // Return early since loadAudioFile handles the buffer setup
+        } catch (error) {
+          console.error('Error loading drums file, falling back to synthetic:', error);
+          // Fallback to synthetic drums sound
+          for (let i = 0; i < frameCount; i++) {
+            const t = i / sampleRate;
+            const beat = Math.floor(t * 4) % 4;
+            const beatTime = (t * 4) % 1;
+            if (beatTime < 0.1) {
+              channelData[i] = (Math.random() - 0.5) * Math.exp(-beatTime * 20) * 0.8;
+            } else {
+              channelData[i] = 0;
+            }
+          }
+        }
+        break;
+      case 'bass':
+        // Load uploaded bass MP3 file
+        try {
+          const bassUrl = new URL('@assets/fv_bass_1755138681956.mp3', import.meta.url).href;
+          await loadAudioFile(bassUrl);
+          return; // Return early since loadAudioFile handles the buffer setup
+        } catch (error) {
+          console.error('Error loading bass file, falling back to synthetic:', error);
+          // Fallback to synthetic bass sound
+          for (let i = 0; i < frameCount; i++) {
+            const t = i / sampleRate;
+            channelData[i] = 0.6 * Math.sin(2 * Math.PI * 110 * t) * (1 + 0.3 * Math.sin(2 * Math.PI * 2 * t));
+          }
+        }
+        break;
+      case 'synth':
+        // Load uploaded synth MP3 file
+        try {
+          const synthUrl = new URL('@assets/fv_synth_1755138233942.mp3', import.meta.url).href;
+          await loadAudioFile(synthUrl);
+          return; // Return early since loadAudioFile handles the buffer setup
+        } catch (error) {
+          console.error('Error loading synth file, falling back to synthetic:', error);
+          // Fallback to synthetic synth sound
+          for (let i = 0; i < frameCount; i++) {
+            const t = i / sampleRate;
+            const freq = 440 + 100 * Math.sin(2 * Math.PI * 0.5 * t); // Frequency modulation
+            channelData[i] = 0.4 * ((2 * (t * freq - Math.floor(t * freq + 0.5))));
+          }
+        }
+        break;
+      case 'piano':
+        // Load uploaded piano MP3 file
+        try {
+          const pianoUrl = new URL('@assets/fv_piano_normalized_1755137880955.mp3', import.meta.url).href;
+          await loadAudioFile(pianoUrl);
+          return; // Return early since loadAudioFile handles the buffer setup
+        } catch (error) {
+          console.error('Error loading piano file, falling back to synthetic:', error);
+          // Fallback to synthetic piano sound
+          for (let i = 0; i < frameCount; i++) {
+            const t = i / sampleRate;
+            const noteTime = t % 0.5; // New note every 0.5 seconds
+            const envelope = Math.exp(-noteTime * 3);
+            channelData[i] = envelope * 0.5 * (
+              Math.sin(2 * Math.PI * 440 * t) +
+              0.5 * Math.sin(2 * Math.PI * 880 * t) +
+              0.25 * Math.sin(2 * Math.PI * 1320 * t)
+            );
+          }
+        }
+        break;
+      case 'electric_guitar':
+        // Load uploaded electric guitar MP3 file
+        try {
+          const guitarUrl = new URL('@assets/FV_ec_guitar_1755137041080.mp3', import.meta.url).href;
+          await loadAudioFile(guitarUrl);
+          return; // Return early since loadAudioFile handles the buffer setup
+        } catch (error) {
+          console.error('Error loading electric guitar file, falling back to synthetic:', error);
+          // Fallback to synthetic electric guitar sound
+          for (let i = 0; i < frameCount; i++) {
+            const t = i / sampleRate;
+            const fundamentalFreq = 82.41; // Low E string
+            const distortion = 0.7;
+            let signal = 0.6 * Math.sin(2 * Math.PI * fundamentalFreq * t);
+            // Add harmonics for guitar-like timbre
+            signal += 0.3 * Math.sin(2 * Math.PI * fundamentalFreq * 2 * t);
+            signal += 0.2 * Math.sin(2 * Math.PI * fundamentalFreq * 3 * t);
+            // Simple distortion effect
+            signal = Math.tanh(signal * distortion);
+            channelData[i] = signal * 0.5;
+          }
+        }
+        break;
+      case 'acoustic_guitar':
+        // Load uploaded acoustic guitar MP3 file
+        try {
+          const acousticGuitarUrl = new URL('@assets/FV_ac_guitar_1755138282773.mp3', import.meta.url).href;
+          await loadAudioFile(acousticGuitarUrl);
+          return; // Return early since loadAudioFile handles the buffer setup
+        } catch (error) {
+          console.error('Error loading acoustic guitar file, falling back to synthetic:', error);
+          // Fallback to synthetic acoustic guitar sound
+          for (let i = 0; i < frameCount; i++) {
+            const t = i / sampleRate;
+            const fundamentalFreq = 196; // G string
+            let signal = 0.5 * Math.sin(2 * Math.PI * fundamentalFreq * t);
+            // Add harmonics for acoustic guitar timbre
+            signal += 0.3 * Math.sin(2 * Math.PI * fundamentalFreq * 2 * t);
+            signal += 0.15 * Math.sin(2 * Math.PI * fundamentalFreq * 3 * t);
+            signal += 0.1 * Math.sin(2 * Math.PI * fundamentalFreq * 4 * t);
+            // Apply gentle envelope
+            const envelope = Math.exp(-t * 0.5);
+            channelData[i] = signal * envelope * 0.6;
+          }
+        }
+        break;
+      case 'vocal':
+        // Load uploaded vocal MP3 file
+        try {
+          const vocalUrl = new URL('@assets/fv_vocal_1755138621004.mp3', import.meta.url).href;
+          await loadAudioFile(vocalUrl);
+          return; // Return early since loadAudioFile handles the buffer setup
+        } catch (error) {
+          console.error('Error loading vocal file, falling back to synthetic:', error);
+          // Fallback to synthetic vocal sound
+          for (let i = 0; i < frameCount; i++) {
+            const t = i / sampleRate;
+            const fundamentalFreq = 220; // A3
+            let signal = 0.4 * Math.sin(2 * Math.PI * fundamentalFreq * t);
+            // Add formant frequencies typical of vowels
+            signal += 0.2 * Math.sin(2 * Math.PI * 800 * t); // First formant
+            signal += 0.1 * Math.sin(2 * Math.PI * 1200 * t); // Second formant
+            channelData[i] = signal * 0.7;
+          }
+        }
+        break;
+      default:
+        // Simple sine wave
+        for (let i = 0; i < frameCount; i++) {
+          const t = i / sampleRate;
+          channelData[i] = 0.5 * Math.sin(2 * Math.PI * 440 * t);
+        }
+    }
+
+    // Stop any existing audio first
+    stopExistingAudio();
+    
+    setAudioBuffer(buffer);
+    setDuration(buffer.duration);
+    setCurrentTime(0);
+    setPlaybackProgress(0);
+    setPausedAt(0);
+    setPlaybackOffset(0);
+  }, [audioContext, initializeAudioContext, stopExistingAudio]);
 
   // Toggle play/pause
-  const togglePlayPause = useCallback(() => {
-    if (!audioBuffer || !audioContext || !analyserNode) {
+  const togglePlayPause = useCallback(async () => {
+    // Initialize audio context if needed (especially for mobile)
+    if (!audioContext) {
+      await initializeAudioContext();
+      return;
+    }
+    
+    if (!audioBuffer || !analyserNode) {
       console.log('Audio not ready - buffer:', !!audioBuffer, 'analyser:', !!analyserNode);
       return;
     }
 
     if (isPlaying) {
-      // Pause
+      // Pause - calculate and store the exact position
       if (sourceNode) {
         sourceNode.stop();
         setSourceNode(null);
       }
-      const currentPos = playbackOffset + (audioContext.currentTime - audioStartTime);
-      setPausedAt(currentPos);
-      setCurrentTime(currentPos);
-      setPlaybackProgress((currentPos / duration) * 100);
+      
+      const elapsedTime = audioContext.currentTime - audioStartTime;
+      const currentPosition = playbackOffset + elapsedTime;
+      const pausePosition = Math.max(0, Math.min(currentPosition, audioBuffer.duration));
+      
+      setPausedAt(pausePosition);
+      setTimerFrozen(true);
+      setFrozenTime(pausePosition);
+      setCurrentTime(pausePosition);
+      setPlaybackProgress((pausePosition / audioBuffer.duration) * 100);
       setIsPlaying(false);
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
     } else {
-      // Play
+      // Resume/Play from paused position
       const source = audioContext.createBufferSource();
       source.buffer = audioBuffer;
       source.connect(analyserNode);
       
-      const startPosition = pausedAt || 0;
-      source.start(0, startPosition);
+      const startOffset = pausedAt;
       
-      setSourceNode(source);
-      setPlaybackOffset(startPosition);
+      if (startOffset >= audioBuffer.duration) {
+        // If at end, restart from beginning
+        source.start(0, 0);
+        setPlaybackOffset(0);
+        setPausedAt(0);
+      } else {
+        // Start from pause position
+        source.start(0, startOffset);
+        setPlaybackOffset(startOffset);
+      }
+      
       setAudioStartTime(audioContext.currentTime);
-      setIsPlaying(true);
+      setTimerFrozen(false);
       
       source.onended = () => {
         setIsPlaying(false);
@@ -153,28 +345,30 @@ export function useAudioProcessor() {
         setPlaybackOffset(0);
         setCurrentTime(0);
         setPlaybackProgress(0);
-        if (animationRef.current) {
-          cancelAnimationFrame(animationRef.current);
-        }
+        setTimerFrozen(false);
+        setFrozenTime(0);
       };
+      
+      setSourceNode(source);
+      setIsPlaying(true);
     }
-  }, [audioContext, audioBuffer, analyserNode, sourceNode, isPlaying, pausedAt, duration, playbackOffset, audioStartTime]);
+  }, [audioContext, audioBuffer, analyserNode, sourceNode, isPlaying]);
 
-  // Seek function
+  // Seek to a specific time position
   const seekTo = useCallback((timePosition: number) => {
-    if (!audioBuffer || !audioContext || !analyserNode) return;
+    if (!audioBuffer || !audioContext) return;
     
     const clampedPosition = Math.max(0, Math.min(timePosition, audioBuffer.duration));
     
+    // If playing, stop current playback and resume from new position
     if (isPlaying && sourceNode) {
-      // Stop current playback
       sourceNode.stop();
       setSourceNode(null);
       
-      // Start new source from sought position
+      // Start new source from the sought position
       const source = audioContext.createBufferSource();
       source.buffer = audioBuffer;
-      source.connect(analyserNode);
+      source.connect(analyserNode!);
       source.start(0, clampedPosition);
       
       setSourceNode(source);
@@ -188,39 +382,51 @@ export function useAudioProcessor() {
         setPlaybackOffset(0);
         setCurrentTime(0);
         setPlaybackProgress(0);
-        if (animationRef.current) {
-          cancelAnimationFrame(animationRef.current);
-        }
+        setTimerFrozen(false);
+        setFrozenTime(0);
       };
     } else {
-      // If paused, update pause position
+      // If paused, just update the pause position
       setPausedAt(clampedPosition);
       setCurrentTime(clampedPosition);
       setPlaybackProgress((clampedPosition / audioBuffer.duration) * 100);
+      setPlaybackOffset(clampedPosition); // Update offset for proper resume
+      if (timerFrozen) {
+        setFrozenTime(clampedPosition);
+      }
     }
-  }, [audioBuffer, audioContext, isPlaying, sourceNode, analyserNode]);
+  }, [audioBuffer, audioContext, isPlaying, sourceNode, analyserNode, timerFrozen]);
 
   // Stop audio
   const stopAudio = useCallback(() => {
-    stopExistingAudio();
+    if (sourceNode) {
+      sourceNode.stop();
+      setSourceNode(null);
+    }
+    setIsPlaying(false);
     setCurrentTime(0);
     setPlaybackProgress(0);
     setPausedAt(0);
     setPlaybackOffset(0);
-  }, [stopExistingAudio]);
+    setTimerFrozen(false);
+    setFrozenTime(0);
+  }, [sourceNode]);
 
   // Update playback time and audio analysis
   useEffect(() => {
     if (!isPlaying || !audioContext || !analyserNode) return;
 
-    const updateTime = () => {
+    const updateTime = () => {      
       const elapsedFromStart = audioContext.currentTime - audioStartTime;
       const currentPos = playbackOffset + elapsedFromStart;
       
-      setCurrentTime(currentPos);
-      setPlaybackProgress((currentPos / duration) * 100);
+      // Only update display time when not frozen
+      if (!timerFrozen) {
+        setCurrentTime(currentPos);
+        setPlaybackProgress((currentPos / duration) * 100);
+      }
 
-      // Audio analysis
+      // Analyze audio for real-time data
       const bufferLength = analyserNode.frequencyBinCount;
       const dataArray = new Float32Array(bufferLength);
       const freqArray = new Uint8Array(bufferLength);
@@ -228,6 +434,7 @@ export function useAudioProcessor() {
       analyserNode.getFloatTimeDomainData(dataArray);
       analyserNode.getByteFrequencyData(freqArray);
       
+      // Update time domain data for visualization
       setTimeData(dataArray);
 
       // Calculate RMS for amplitude
@@ -236,7 +443,7 @@ export function useAudioProcessor() {
         sum += dataArray[i] * dataArray[i];
       }
       const rms = Math.sqrt(sum / dataArray.length);
-      const amplitude = 20 * Math.log10(rms + 1e-10);
+      const amplitude = 20 * Math.log10(rms + 1e-10); // Convert to dB
       setCurrentAmplitude(amplitude);
 
       // Find dominant frequency
@@ -255,33 +462,19 @@ export function useAudioProcessor() {
       setPeakFrequency(dominantFrequency);
       setPeakMagnitude(20 * Math.log10(maxValue / 255 + 1e-10));
 
-      if (currentPos < duration && isPlaying) {
-        animationRef.current = requestAnimationFrame(updateTime);
-      } else if (currentPos >= duration) {
-        // End of audio reached
-        setIsPlaying(false);
-        setSourceNode(null);
-        setPausedAt(0);
-        setPlaybackOffset(0);
-        setCurrentTime(0);
-        setPlaybackProgress(0);
+      if (currentPos < duration) {
+        requestAnimationFrame(updateTime);
       }
     };
 
-    animationRef.current = requestAnimationFrame(updateTime);
-
-    return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
-    };
-  }, [isPlaying, audioContext, analyserNode, audioStartTime, playbackOffset, duration]);
+    updateTime();
+  }, [isPlaying, audioContext, analyserNode, duration, audioStartTime, playbackOffset]);
 
   return {
     audioContext,
     analyserNode,
     isPlaying,
-    currentTime,
+    currentTime: timerFrozen ? frozenTime : currentTime,
     duration,
     playbackProgress,
     currentAmplitude,
