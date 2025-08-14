@@ -70,6 +70,8 @@ export function useAudioProcessor() {
       if (!isPlaying) {
         setPausedAt(0);
         setPlaybackOffset(0);
+        setTimerFrozen(false);
+        setFrozenTime(0);
       }
     } catch (error) {
       console.error('Error loading audio file:', error);
@@ -359,18 +361,15 @@ export function useAudioProcessor() {
 
   // Update playback time and audio analysis
   useEffect(() => {
-    if (!isPlaying || !audioContext || !analyserNode) return;
+    if (!isPlaying || !audioContext || !analyserNode || timerFrozen) return;
 
     const updateTime = () => {
+      if (timerFrozen) return; // Stop updating when frozen
+      
       const elapsedFromStart = audioContext.currentTime - audioStartTime;
       const currentPos = playbackOffset + elapsedFromStart;
       setCurrentTime(currentPos);
       setPlaybackProgress((currentPos / duration) * 100);
-      
-      // Don't update time when frozen
-      if (!timerFrozen) {
-        // Time updates normally when not frozen
-      }
 
       // Analyze audio for real-time data
       const bufferLength = analyserNode.frequencyBinCount;
@@ -408,13 +407,13 @@ export function useAudioProcessor() {
       setPeakFrequency(dominantFrequency);
       setPeakMagnitude(20 * Math.log10(maxValue / 255 + 1e-10));
 
-      if (currentPos < duration) {
+      if (currentPos < duration && !timerFrozen) {
         requestAnimationFrame(updateTime);
       }
     };
 
     updateTime();
-  }, [isPlaying, audioContext, analyserNode, duration, audioStartTime, playbackOffset]);
+  }, [isPlaying, audioContext, analyserNode, duration, audioStartTime, playbackOffset, timerFrozen]);
 
   return {
     audioContext,

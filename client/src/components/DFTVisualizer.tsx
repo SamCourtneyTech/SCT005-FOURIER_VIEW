@@ -28,6 +28,7 @@ export function DFTVisualizer() {
   const [selectedFrequencyBin, setSelectedFrequencyBin] = useState(0);
   const [selectedExampleAudio, setSelectedExampleAudio] = useState<string>("full_song");
   const [uploadedFileName, setUploadedFileName] = useState<string>("");
+  const [uploadedFileURL, setUploadedFileURL] = useState<string>("");
   const [currentAudioSource, setCurrentAudioSource] = useState<"example" | "uploaded">("example");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -96,6 +97,7 @@ export function DFTVisualizer() {
         
         // Set uploaded file info and switch to uploaded audio
         setUploadedFileName(fileName);
+        setUploadedFileURL(uploadURL);
         setCurrentAudioSource("uploaded");
         setSelectedExampleAudio(""); // Clear example selection
         
@@ -180,7 +182,13 @@ export function DFTVisualizer() {
                   <Button
                     variant={currentAudioSource === "uploaded" ? "default" : "ghost"}
                     size="sm"
-                    onClick={() => setCurrentAudioSource("uploaded")}
+                    onClick={async () => {
+                      setCurrentAudioSource("uploaded");
+                      setSelectedExampleAudio(""); // Clear example selection
+                      if (uploadedFileURL) {
+                        await loadAudioFile(uploadedFileURL);
+                      }
+                    }}
                     className="text-xs px-3 py-1 max-w-[150px] truncate"
                     title={uploadedFileName}
                   >
