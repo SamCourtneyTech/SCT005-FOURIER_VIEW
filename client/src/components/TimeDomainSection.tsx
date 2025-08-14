@@ -44,8 +44,10 @@ export function TimeDomainSection({
       ctx.fillStyle = '#1a1a1a';
       ctx.fillRect(0, 0, rect.width, rect.height);
 
-      // Calculate grid spacing (needed for both grid and labels)
-      const gridSpacing = rect.width / sampleWindow;
+      // Add padding for labels
+      const padding = 20;
+      const usableWidth = rect.width - (padding * 2);
+      const gridSpacing = usableWidth / sampleWindow;
 
       // Draw grid only for sample windows <= 64
       if (sampleWindow <= 64) {
@@ -54,7 +56,7 @@ export function TimeDomainSection({
         
         // Draw vertical grid lines for each sample (n markings)
         for (let i = 0; i <= sampleWindow; i++) {
-          const x = i * gridSpacing;
+          const x = padding + (i * gridSpacing);
           ctx.beginPath();
           ctx.moveTo(x, 0);
           ctx.lineTo(x, rect.height);
@@ -64,8 +66,8 @@ export function TimeDomainSection({
         // Draw horizontal grid lines
         for (let i = 0; i < rect.height; i += 20) {
           ctx.beginPath();
-          ctx.moveTo(0, i);
-          ctx.lineTo(rect.width, i);
+          ctx.moveTo(padding, i);
+          ctx.lineTo(rect.width - padding, i);
           ctx.stroke();
         }
       }
@@ -78,7 +80,7 @@ export function TimeDomainSection({
       if (sampleWindow <= 8) {
         // Show all n values for small windows
         for (let i = 0; i < sampleWindow; i++) {
-          const x = (i + 0.5) * gridSpacing;
+          const x = padding + (i + 0.5) * gridSpacing;
           ctx.fillText(`n=${i}`, x, rect.height - 5);
         }
       } else {
@@ -89,7 +91,7 @@ export function TimeDomainSection({
         
         const positions = [0, quarter, center, threeQuarter, sampleWindow - 1];
         positions.forEach(i => {
-          const x = (i + 0.5) * gridSpacing;
+          const x = padding + (i + 0.5) * gridSpacing;
           ctx.fillText(`n=${i}`, x, rect.height - 5);
         });
       }
@@ -118,8 +120,8 @@ export function TimeDomainSection({
       ctx.strokeStyle = '#444';
       ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.moveTo(0, rect.height / 2);
-      ctx.lineTo(rect.width, rect.height / 2);
+      ctx.moveTo(padding, rect.height / 2);
+      ctx.lineTo(rect.width - padding, rect.height / 2);
       ctx.stroke();
 
       // Store current timeData when playing for freezing on pause
@@ -132,7 +134,7 @@ export function TimeDomainSection({
 
       // Draw waveform using displayData scaled to sample window with bars from center
       if (displayData && displayData.length >= sampleWindow) {
-        const sliceWidth = rect.width / sampleWindow;
+        const sliceWidth = usableWidth / sampleWindow;
         const centerY = rect.height / 2;
         const barWidth = sliceWidth * 0.8; // Leave some spacing between bars
 
@@ -141,7 +143,7 @@ export function TimeDomainSection({
           // Scale amplitude to canvas coordinates (-1 to 1 maps to full height)
           const barHeight = (amplitude * centerY);
           
-          const x = i * sliceWidth + (sliceWidth - barWidth) / 2;
+          const x = padding + i * sliceWidth + (sliceWidth - barWidth) / 2;
           
           // Draw bars extending from center
           ctx.fillStyle = '#1976D2';
