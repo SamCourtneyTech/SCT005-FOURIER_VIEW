@@ -205,15 +205,23 @@ export function useAudioProcessor() {
         }
         break;
       case 'vocal':
-        // Vocal-like formant synthesis
-        for (let i = 0; i < frameCount; i++) {
-          const t = i / sampleRate;
-          const fundamentalFreq = 220; // A3
-          let signal = 0.4 * Math.sin(2 * Math.PI * fundamentalFreq * t);
-          // Add formant frequencies typical of vowels
-          signal += 0.2 * Math.sin(2 * Math.PI * 800 * t); // First formant
-          signal += 0.1 * Math.sin(2 * Math.PI * 1200 * t); // Second formant
-          channelData[i] = signal * 0.7;
+        // Load uploaded vocal MP3 file
+        try {
+          const vocalUrl = new URL('@assets/fv_vocal_1755138621004.mp3', import.meta.url).href;
+          await loadAudioFile(vocalUrl);
+          return; // Return early since loadAudioFile handles the buffer setup
+        } catch (error) {
+          console.error('Error loading vocal file, falling back to synthetic:', error);
+          // Fallback to synthetic vocal sound
+          for (let i = 0; i < frameCount; i++) {
+            const t = i / sampleRate;
+            const fundamentalFreq = 220; // A3
+            let signal = 0.4 * Math.sin(2 * Math.PI * fundamentalFreq * t);
+            // Add formant frequencies typical of vowels
+            signal += 0.2 * Math.sin(2 * Math.PI * 800 * t); // First formant
+            signal += 0.1 * Math.sin(2 * Math.PI * 1200 * t); // Second formant
+            channelData[i] = signal * 0.7;
+          }
         }
         break;
       default:
