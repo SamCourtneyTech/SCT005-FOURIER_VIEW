@@ -20,8 +20,6 @@ export function useAudioProcessor() {
   const [pausedAt, setPausedAt] = useState<number>(0);
   const [audioStartTime, setAudioStartTime] = useState<number>(0);
   const [playbackOffset, setPlaybackOffset] = useState<number>(0);
-  const [displayTime, setDisplayTime] = useState<number>(0);
-  const [displayProgress, setDisplayProgress] = useState<number>(0);
 
   // Initialize audio context
   const initializeAudioContext = useCallback(async () => {
@@ -299,11 +297,9 @@ export function useAudioProcessor() {
       const pausePosition = Math.max(0, Math.min(currentPosition, audioBuffer.duration));
       
       setPausedAt(pausePosition);
-      setDisplayTime(pausePosition);
-      setDisplayProgress((pausePosition / audioBuffer.duration) * 100);
+      setCurrentTime(pausePosition);
+      setPlaybackProgress((pausePosition / audioBuffer.duration) * 100);
       setIsPlaying(false);
-      
-      console.log('Pausing at:', pausePosition, 'seconds');
     } else {
       // Resume/Play from paused position
       const source = audioContext.createBufferSource();
@@ -311,7 +307,6 @@ export function useAudioProcessor() {
       source.connect(analyserNode);
       
       const startOffset = pausedAt;
-      console.log('Resuming from:', startOffset, 'seconds');
       
       if (startOffset >= audioBuffer.duration) {
         // If at end, restart from beginning
@@ -333,8 +328,6 @@ export function useAudioProcessor() {
         setPlaybackOffset(0);
         setCurrentTime(0);
         setPlaybackProgress(0);
-        setDisplayTime(0);
-        setDisplayProgress(0);
       };
       
       setSourceNode(source);
@@ -353,10 +346,6 @@ export function useAudioProcessor() {
     setPlaybackProgress(0);
     setPausedAt(0);
     setPlaybackOffset(0);
-    setDisplayTime(0);
-    setDisplayProgress(0);
-    setDisplayTime(0);
-    setDisplayProgress(0);
   }, [sourceNode]);
 
   // Update playback time and audio analysis
@@ -364,12 +353,12 @@ export function useAudioProcessor() {
     if (!isPlaying || !audioContext || !analyserNode) return;
 
     const updateTime = () => {
+      if (!isPlaying) return; // Stop updating if not playing
+      
       const elapsedFromStart = audioContext.currentTime - audioStartTime;
       const currentPos = playbackOffset + elapsedFromStart;
       setCurrentTime(currentPos);
       setPlaybackProgress((currentPos / duration) * 100);
-      setDisplayTime(currentPos);
-      setDisplayProgress((currentPos / duration) * 100);
 
       // Analyze audio for real-time data
       const bufferLength = analyserNode.frequencyBinCount;
@@ -407,7 +396,7 @@ export function useAudioProcessor() {
       setPeakFrequency(dominantFrequency);
       setPeakMagnitude(20 * Math.log10(maxValue / 255 + 1e-10));
 
-      if (currentPos < duration) {
+      if (currentPos < duration && isPlaying) {
         requestAnimationFrame(updateTime);
       }
     };
@@ -419,9 +408,9 @@ export function useAudioProcessor() {
     audioContext,
     analyserNode,
     isPlaying,
-    currentTime: displayTime,
+    currentTime,
     duration,
-    playbackProgress: displayProgress,
+    playbackProgress,
     currentAmplitude,
     timeData,
     dominantFreq,
