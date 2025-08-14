@@ -51,6 +51,7 @@ export function DFTVisualizer() {
     loadExampleAudio,
     togglePlayPause,
     stopAudio,
+    seekTo,
   } = useAudioProcessor();
 
   const {
@@ -118,7 +119,7 @@ export function DFTVisualizer() {
         setCurrentAudioSource("uploaded");
         setSelectedExampleAudio(""); // Clear example selection
         
-        // Load the uploaded audio through our server
+        // Load the uploaded audio through our server (auto-play ready)
         await loadAudioFile(serverURL);
       }
     }
@@ -196,21 +197,14 @@ export function DFTVisualizer() {
 
               {uploadedFileName && (
                 <div className="flex items-center space-x-2">
-                  <Button
-                    variant={currentAudioSource === "uploaded" ? "default" : "ghost"}
-                    size="sm"
-                    onClick={async () => {
-                      setCurrentAudioSource("uploaded");
-                      setSelectedExampleAudio(""); // Clear example selection
-                      if (uploadedFileURL) {
-                        await loadAudioFile(uploadedFileURL);
-                      }
-                    }}
-                    className="text-xs px-3 py-1 max-w-[150px] truncate"
+                  <span 
+                    className={`text-xs px-3 py-1 max-w-[150px] truncate border rounded ${
+                      currentAudioSource === "uploaded" ? "border-primary text-primary" : "border-gray-600 text-gray-400"
+                    }`}
                     title={uploadedFileName}
                   >
-                    {uploadedFileName.length > 20 ? `${uploadedFileName.substring(0, 17)}...` : uploadedFileName}
-                  </Button>
+                    📁 {uploadedFileName.length > 15 ? `${uploadedFileName.substring(0, 12)}...` : uploadedFileName}
+                  </span>
                 </div>
               )}
 
@@ -244,7 +238,16 @@ export function DFTVisualizer() {
                 {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
               </Button>
 
-              <div className="w-32 h-1 bg-gray-600 rounded-full mx-3 relative">
+              <div 
+                className="w-32 h-1 bg-gray-600 rounded-full mx-3 relative cursor-pointer"
+                onClick={(e) => {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const clickX = e.clientX - rect.left;
+                  const percentage = clickX / rect.width;
+                  const newTime = percentage * duration;
+                  seekTo(newTime);
+                }}
+              >
                 <div
                   className="h-full bg-primary rounded-full transition-all duration-100"
                   style={{ width: `${playbackProgress}%` }}

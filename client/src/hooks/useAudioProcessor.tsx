@@ -344,6 +344,48 @@ export function useAudioProcessor() {
     }
   }, [audioContext, audioBuffer, analyserNode, sourceNode, isPlaying]);
 
+  // Seek to a specific time position
+  const seekTo = useCallback((timePosition: number) => {
+    if (!audioBuffer || !audioContext) return;
+    
+    const clampedPosition = Math.max(0, Math.min(timePosition, audioBuffer.duration));
+    
+    // If playing, stop current playback and resume from new position
+    if (isPlaying && sourceNode) {
+      sourceNode.stop();
+      setSourceNode(null);
+      
+      // Start new source from the sought position
+      const source = audioContext.createBufferSource();
+      source.buffer = audioBuffer;
+      source.connect(analyserNode!);
+      source.start(0, clampedPosition);
+      
+      setSourceNode(source);
+      setPlaybackOffset(clampedPosition);
+      setAudioStartTime(audioContext.currentTime);
+      
+      source.onended = () => {
+        setIsPlaying(false);
+        setSourceNode(null);
+        setPausedAt(0);
+        setPlaybackOffset(0);
+        setCurrentTime(0);
+        setPlaybackProgress(0);
+        setTimerFrozen(false);
+        setFrozenTime(0);
+      };
+    } else {
+      // If paused, just update the pause position
+      setPausedAt(clampedPosition);
+      setCurrentTime(clampedPosition);
+      setPlaybackProgress((clampedPosition / audioBuffer.duration) * 100);
+      if (timerFrozen) {
+        setFrozenTime(clampedPosition);
+      }
+    }
+  }, [audioBuffer, audioContext, isPlaying, sourceNode, analyserNode, timerFrozen]);
+
   // Stop audio
   const stopAudio = useCallback(() => {
     if (sourceNode) {
@@ -435,5 +477,6 @@ export function useAudioProcessor() {
     loadExampleAudio,
     togglePlayPause,
     stopAudio,
+    seekTo,
   };
 }
