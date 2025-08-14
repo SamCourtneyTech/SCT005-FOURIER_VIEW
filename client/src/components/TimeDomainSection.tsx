@@ -44,26 +44,30 @@ export function TimeDomainSection({
       ctx.fillStyle = '#1a1a1a';
       ctx.fillRect(0, 0, rect.width, rect.height);
 
-      // Draw grid
-      ctx.strokeStyle = '#333';
-      ctx.lineWidth = 1;
+      // Calculate grid spacing (needed for both grid and labels)
       const gridSpacing = rect.width / sampleWindow;
-      
-      // Draw vertical grid lines for each sample (n markings)
-      for (let i = 0; i <= sampleWindow; i++) {
-        const x = i * gridSpacing;
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, rect.height);
-        ctx.stroke();
-      }
-      
-      // Draw horizontal grid lines
-      for (let i = 0; i < rect.height; i += 20) {
-        ctx.beginPath();
-        ctx.moveTo(0, i);
-        ctx.lineTo(rect.width, i);
-        ctx.stroke();
+
+      // Draw grid only for sample windows <= 64
+      if (sampleWindow <= 64) {
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 1;
+        
+        // Draw vertical grid lines for each sample (n markings)
+        for (let i = 0; i <= sampleWindow; i++) {
+          const x = i * gridSpacing;
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, rect.height);
+          ctx.stroke();
+        }
+        
+        // Draw horizontal grid lines
+        for (let i = 0; i < rect.height; i += 20) {
+          ctx.beginPath();
+          ctx.moveTo(0, i);
+          ctx.lineTo(rect.width, i);
+          ctx.stroke();
+        }
       }
 
       // Draw n markings on x-axis - show quarter/center/3-quarter for larger windows

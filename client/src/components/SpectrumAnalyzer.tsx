@@ -54,28 +54,32 @@ export function SpectrumAnalyzer({
       ctx.fillStyle = '#1a1a1a';
       ctx.fillRect(0, 0, rect.width, rect.height);
 
-      // Draw grid with padding to prevent labels from going off screen
-      ctx.strokeStyle = '#333';
-      ctx.lineWidth = 1;
-      const padding = 20; // Add padding on both sides
+      // Calculate spacing and padding (needed for both grid and labels)
+      const padding = 20; // Add padding on both sides for frequency labels
       const usableWidth = rect.width - (padding * 2);
       const gridSpacing = usableWidth / sampleWindow;
       
-      // Draw vertical grid lines for each frequency bin
-      for (let i = 0; i <= sampleWindow; i++) {
-        const x = padding + (i * gridSpacing);
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, rect.height);
-        ctx.stroke();
-      }
-      
-      // Draw horizontal grid lines
-      for (let i = 0; i < rect.height; i += 20) {
-        ctx.beginPath();
-        ctx.moveTo(padding, i);
-        ctx.lineTo(rect.width - padding, i);
-        ctx.stroke();
+      // Draw grid only for sample windows <= 64
+      if (sampleWindow <= 64) {
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 1;
+        
+        // Draw vertical grid lines for each frequency bin
+        for (let i = 0; i <= sampleWindow; i++) {
+          const x = padding + (i * gridSpacing);
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, rect.height);
+          ctx.stroke();
+        }
+        
+        // Draw horizontal grid lines
+        for (let i = 0; i < rect.height; i += 20) {
+          ctx.beginPath();
+          ctx.moveTo(padding, i);
+          ctx.lineTo(rect.width - padding, i);
+          ctx.stroke();
+        }
       }
 
       // Draw frequency bin labels (k values) - only show quarter, half, three-quarter, and max
