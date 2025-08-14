@@ -213,7 +213,8 @@ export function DFTVisualizer() {
                   <Button
                     variant={currentAudioSource === "uploaded" ? "default" : "ghost"}
                     size="sm"
-                    onClick={async () => {
+                    onMouseDown={async (e) => {
+                      e.preventDefault();
                       setCurrentAudioSource("uploaded");
                       setSelectedExampleAudio(""); // Clear example selection
                       if (uploadedFileURL) {
@@ -260,10 +261,11 @@ export function DFTVisualizer() {
 
               <div 
                 className="w-32 h-1 bg-gray-600 rounded-full mx-3 relative cursor-pointer"
-                onClick={(e) => {
+                onMouseDown={(e) => {
+                  e.preventDefault();
                   const rect = e.currentTarget.getBoundingClientRect();
                   const clickX = e.clientX - rect.left;
-                  const percentage = clickX / rect.width;
+                  const percentage = Math.max(0, Math.min(1, clickX / rect.width));
                   const newTime = percentage * duration;
                   seekTo(newTime);
                 }}

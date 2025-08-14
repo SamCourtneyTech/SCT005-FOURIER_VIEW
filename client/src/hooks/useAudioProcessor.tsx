@@ -311,6 +311,7 @@ export function useAudioProcessor() {
       const pausePosition = Math.max(0, Math.min(currentPosition, audioBuffer.duration));
       
       setPausedAt(pausePosition);
+      setPlaybackOffset(pausePosition);
       setTimerFrozen(true);
       setFrozenTime(pausePosition);
       setCurrentTime(pausePosition);
@@ -329,14 +330,15 @@ export function useAudioProcessor() {
         source.start(0, 0);
         setPlaybackOffset(0);
         setPausedAt(0);
+        setTimerFrozen(false);
       } else {
         // Start from pause position
         source.start(0, startOffset);
         setPlaybackOffset(startOffset);
+        setTimerFrozen(false);
       }
       
       setAudioStartTime(audioContext.currentTime);
-      setTimerFrozen(false);
       
       source.onended = () => {
         setIsPlaying(false);
@@ -352,28 +354,36 @@ export function useAudioProcessor() {
       setSourceNode(source);
       setIsPlaying(true);
     }
-  }, [audioContext, audioBuffer, analyserNode, sourceNode, isPlaying]);
+  }, [audioContext, audioBuffer, analyserNode, sourceNode, isPlaying, audioStartTime, playbackOffset, pausedAt]);
 
   // Seek to a specific time position
   const seekTo = useCallback((timePosition: number) => {
-    if (!audioBuffer || !audioContext) return;
+    if (!audioBuffer || !audioContext || !analyserNode) return;
     
     const clampedPosition = Math.max(0, Math.min(timePosition, audioBuffer.duration));
     
-    // If playing, stop current playback and resume from new position
-    if (isPlaying && sourceNode) {
+    // Always stop current source if it exists
+    if (sourceNode) {
       sourceNode.stop();
       setSourceNode(null);
-      
-      // Start new source from the sought position
+    }
+    
+    // Update position states
+    setPausedAt(clampedPosition);
+    setPlaybackOffset(clampedPosition);
+    setCurrentTime(clampedPosition);
+    setPlaybackProgress((clampedPosition / audioBuffer.duration) * 100);
+    
+    if (isPlaying) {
+      // If was playing, start new source from sought position
       const source = audioContext.createBufferSource();
       source.buffer = audioBuffer;
-      source.connect(analyserNode!);
+      source.connect(analyserNode);
       source.start(0, clampedPosition);
       
       setSourceNode(source);
-      setPlaybackOffset(clampedPosition);
       setAudioStartTime(audioContext.currentTime);
+      setTimerFrozen(false);
       
       source.onended = () => {
         setIsPlaying(false);
@@ -386,16 +396,11 @@ export function useAudioProcessor() {
         setFrozenTime(0);
       };
     } else {
-      // If paused, just update the pause position
-      setPausedAt(clampedPosition);
-      setCurrentTime(clampedPosition);
-      setPlaybackProgress((clampedPosition / audioBuffer.duration) * 100);
-      setPlaybackOffset(clampedPosition); // Update offset for proper resume
-      if (timerFrozen) {
-        setFrozenTime(clampedPosition);
-      }
+      // If was paused, stay paused but update frozen time
+      setTimerFrozen(true);
+      setFrozenTime(clampedPosition);
     }
-  }, [audioBuffer, audioContext, isPlaying, sourceNode, analyserNode, timerFrozen]);
+  }, [audioBuffer, audioContext, analyserNode, sourceNode, isPlaying]);
 
   // Stop audio
   const stopAudio = useCallback(() => {
