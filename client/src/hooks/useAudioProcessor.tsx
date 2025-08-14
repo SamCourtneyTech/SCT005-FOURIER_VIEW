@@ -17,9 +17,9 @@ export function useAudioProcessor() {
   const [peakMagnitude, setPeakMagnitude] = useState(0);
   const [frequencyResolution, setFrequencyResolution] = useState(0);
   
-  const startTimeRef = useRef<number>(0);
-  const pauseTimeRef = useRef<number>(0);
-  const [isPaused, setIsPaused] = useState(false);
+  const [pausedAt, setPausedAt] = useState<number>(0);
+  const [audioStartTime, setAudioStartTime] = useState<number>(0);
+  const [playbackOffset, setPlaybackOffset] = useState<number>(0);
 
   // Initialize audio context
   const initializeAudioContext = useCallback(async () => {
@@ -64,9 +64,10 @@ export function useAudioProcessor() {
       setDuration(decodedBuffer.duration);
       setCurrentTime(0);
       setPlaybackProgress(0);
-      // Only reset pause time if we're not currently paused
-      if (!isPaused) {
-        pauseTimeRef.current = 0;
+      // Reset playback state only when not paused
+      if (!isPlaying) {
+        setPausedAt(0);
+        setPlaybackOffset(0);
       }
     } catch (error) {
       console.error('Error loading audio file:', error);
@@ -264,9 +265,10 @@ export function useAudioProcessor() {
     setDuration(buffer.duration);
     setCurrentTime(0);
     setPlaybackProgress(0);
-    // Only reset pause time if we're not currently paused
-    if (!isPaused) {
-      pauseTimeRef.current = 0;
+    // Reset playback state only when not paused
+    if (!isPlaying) {
+      setPausedAt(0);
+      setPlaybackOffset(0);
     }
   }, [audioContext, initializeAudioContext]);
 
@@ -284,52 +286,55 @@ export function useAudioProcessor() {
     }
 
     if (isPlaying) {
-      // Pause
+      // Pause - calculate and store the exact position
       if (sourceNode) {
         sourceNode.stop();
         setSourceNode(null);
       }
-      // Store the current playback position
-      const currentPos = audioContext.currentTime - startTimeRef.current;
-      pauseTimeRef.current = Math.max(0, Math.min(currentPos, audioBuffer.duration));
-      console.log('Pausing at time:', pauseTimeRef.current, 'seconds');
+      
+      const elapsedTime = audioContext.currentTime - audioStartTime;
+      const currentPosition = playbackOffset + elapsedTime;
+      const pausePosition = Math.max(0, Math.min(currentPosition, audioBuffer.duration));
+      
+      setPausedAt(pausePosition);
+      setCurrentTime(pausePosition);
+      setPlaybackProgress((pausePosition / audioBuffer.duration) * 100);
       setIsPlaying(false);
-      setIsPaused(true);
+      
+      console.log('Pausing at:', pausePosition, 'seconds');
     } else {
-      // Resume/Play
+      // Resume/Play from paused position
       const source = audioContext.createBufferSource();
       source.buffer = audioBuffer;
       source.connect(analyserNode);
       
-      const resumeTime = pauseTimeRef.current;
-      console.log('Resuming from time:', resumeTime, 'seconds (pauseTimeRef.current =', pauseTimeRef.current, ')');
-      console.log('Audio buffer duration:', audioBuffer.duration, 'isPaused:', isPaused);
+      const startOffset = pausedAt;
+      console.log('Resuming from:', startOffset, 'seconds');
       
-      if (resumeTime >= audioBuffer.duration) {
-        // Reset to beginning if at end
-        console.log('Resetting to beginning');
-        pauseTimeRef.current = 0;
+      if (startOffset >= audioBuffer.duration) {
+        // If at end, restart from beginning
         source.start(0, 0);
-        startTimeRef.current = audioContext.currentTime;
+        setPlaybackOffset(0);
+        setPausedAt(0);
       } else {
-        // Resume from stored position
-        console.log('Actually starting from offset:', resumeTime);
-        source.start(0, resumeTime);
-        startTimeRef.current = audioContext.currentTime - resumeTime;
+        // Start from pause position
+        source.start(0, startOffset);
+        setPlaybackOffset(startOffset);
       }
+      
+      setAudioStartTime(audioContext.currentTime);
       
       source.onended = () => {
         setIsPlaying(false);
         setSourceNode(null);
-        pauseTimeRef.current = 0;
-        setIsPaused(false);
+        setPausedAt(0);
+        setPlaybackOffset(0);
         setCurrentTime(0);
         setPlaybackProgress(0);
       };
       
       setSourceNode(source);
       setIsPlaying(true);
-      setIsPaused(false);
     }
   }, [audioContext, audioBuffer, analyserNode, sourceNode, isPlaying]);
 
@@ -342,18 +347,19 @@ export function useAudioProcessor() {
     setIsPlaying(false);
     setCurrentTime(0);
     setPlaybackProgress(0);
-    pauseTimeRef.current = 0;
-    setIsPaused(false);
+    setPausedAt(0);
+    setPlaybackOffset(0);
   }, [sourceNode]);
 
   // Update playback time and audio analysis
   useEffect(() => {
-    if (!isPlaying || !audioContext || !analyserNode || isPaused) return;
+    if (!isPlaying || !audioContext || !analyserNode) return;
 
     const updateTime = () => {
-      const elapsed = audioContext.currentTime - startTimeRef.current;
-      setCurrentTime(elapsed);
-      setPlaybackProgress((elapsed / duration) * 100);
+      const elapsedFromStart = audioContext.currentTime - audioStartTime;
+      const currentPos = playbackOffset + elapsedFromStart;
+      setCurrentTime(currentPos);
+      setPlaybackProgress((currentPos / duration) * 100);
 
       // Analyze audio for real-time data
       const bufferLength = analyserNode.frequencyBinCount;
@@ -391,13 +397,13 @@ export function useAudioProcessor() {
       setPeakFrequency(dominantFrequency);
       setPeakMagnitude(20 * Math.log10(maxValue / 255 + 1e-10));
 
-      if (elapsed < duration) {
+      if (currentPos < duration) {
         requestAnimationFrame(updateTime);
       }
     };
 
     updateTime();
-  }, [isPlaying, audioContext, analyserNode, duration, isPaused]);
+  }, [isPlaying, audioContext, analyserNode, duration, audioStartTime, playbackOffset]);
 
   return {
     audioContext,
