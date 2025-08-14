@@ -277,12 +277,17 @@ export function useAudioProcessor() {
     }
 
     if (isPlaying) {
-      // Pause
+      // Pause - calculate actual elapsed time
       if (sourceNode) {
         sourceNode.stop();
         setSourceNode(null);
       }
-      pauseTimeRef.current = currentTime;
+      // Store the actual elapsed time when pausing
+      const actualElapsed = audioContext.currentTime - startTimeRef.current;
+      pauseTimeRef.current = Math.max(0, Math.min(actualElapsed, audioBuffer.duration));
+      console.log('Pausing at time:', pauseTimeRef.current, 'seconds');
+      setCurrentTime(pauseTimeRef.current);
+      setPlaybackProgress((pauseTimeRef.current / audioBuffer.duration) * 100);
       setIsPlaying(false);
     } else {
       // Play
@@ -291,13 +296,16 @@ export function useAudioProcessor() {
       source.connect(analyserNode);
       
       const offset = pauseTimeRef.current;
+      console.log('Resuming from time:', offset, 'seconds');
       if (offset >= audioBuffer.duration) {
         // If we're at or past the end, restart from beginning
+        console.log('Starting from beginning (end reached)');
         source.start(0, 0);
         startTimeRef.current = audioContext.currentTime;
         pauseTimeRef.current = 0;
       } else {
         // Resume from pause position
+        console.log('Starting from offset:', offset);
         source.start(0, offset);
         startTimeRef.current = audioContext.currentTime - offset;
       }
