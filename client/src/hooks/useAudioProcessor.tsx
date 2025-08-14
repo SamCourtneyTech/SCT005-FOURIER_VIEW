@@ -20,6 +20,8 @@ export function useAudioProcessor() {
   const [pausedAt, setPausedAt] = useState<number>(0);
   const [audioStartTime, setAudioStartTime] = useState<number>(0);
   const [playbackOffset, setPlaybackOffset] = useState<number>(0);
+  const [displayTime, setDisplayTime] = useState<number>(0);
+  const [displayProgress, setDisplayProgress] = useState<number>(0);
 
   // Initialize audio context
   const initializeAudioContext = useCallback(async () => {
@@ -297,8 +299,8 @@ export function useAudioProcessor() {
       const pausePosition = Math.max(0, Math.min(currentPosition, audioBuffer.duration));
       
       setPausedAt(pausePosition);
-      setCurrentTime(pausePosition);
-      setPlaybackProgress((pausePosition / audioBuffer.duration) * 100);
+      setDisplayTime(pausePosition);
+      setDisplayProgress((pausePosition / audioBuffer.duration) * 100);
       setIsPlaying(false);
       
       console.log('Pausing at:', pausePosition, 'seconds');
@@ -331,6 +333,8 @@ export function useAudioProcessor() {
         setPlaybackOffset(0);
         setCurrentTime(0);
         setPlaybackProgress(0);
+        setDisplayTime(0);
+        setDisplayProgress(0);
       };
       
       setSourceNode(source);
@@ -349,6 +353,10 @@ export function useAudioProcessor() {
     setPlaybackProgress(0);
     setPausedAt(0);
     setPlaybackOffset(0);
+    setDisplayTime(0);
+    setDisplayProgress(0);
+    setDisplayTime(0);
+    setDisplayProgress(0);
   }, [sourceNode]);
 
   // Update playback time and audio analysis
@@ -360,6 +368,8 @@ export function useAudioProcessor() {
       const currentPos = playbackOffset + elapsedFromStart;
       setCurrentTime(currentPos);
       setPlaybackProgress((currentPos / duration) * 100);
+      setDisplayTime(currentPos);
+      setDisplayProgress((currentPos / duration) * 100);
 
       // Analyze audio for real-time data
       const bufferLength = analyserNode.frequencyBinCount;
@@ -409,9 +419,9 @@ export function useAudioProcessor() {
     audioContext,
     analyserNode,
     isPlaying,
-    currentTime: isPlaying ? currentTime : (pausedAt || currentTime), // Show paused time or current time when not playing
+    currentTime: displayTime,
     duration,
-    playbackProgress: isPlaying ? playbackProgress : ((pausedAt || currentTime) / duration) * 100, // Show paused progress when not playing
+    playbackProgress: displayProgress,
     currentAmplitude,
     timeData,
     dominantFreq,
