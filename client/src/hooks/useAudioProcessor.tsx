@@ -122,11 +122,19 @@ export function useAudioProcessor() {
         }
         break;
       case 'synth':
-        // Sawtooth wave for synth sound
-        for (let i = 0; i < frameCount; i++) {
-          const t = i / sampleRate;
-          const freq = 440 + 100 * Math.sin(2 * Math.PI * 0.5 * t); // Frequency modulation
-          channelData[i] = 0.4 * ((2 * (t * freq - Math.floor(t * freq + 0.5))));
+        // Load uploaded synth MP3 file
+        try {
+          const synthUrl = new URL('@assets/fv_synth_1755138233942.mp3', import.meta.url).href;
+          await loadAudioFile(synthUrl);
+          return; // Return early since loadAudioFile handles the buffer setup
+        } catch (error) {
+          console.error('Error loading synth file, falling back to synthetic:', error);
+          // Fallback to synthetic synth sound
+          for (let i = 0; i < frameCount; i++) {
+            const t = i / sampleRate;
+            const freq = 440 + 100 * Math.sin(2 * Math.PI * 0.5 * t); // Frequency modulation
+            channelData[i] = 0.4 * ((2 * (t * freq - Math.floor(t * freq + 0.5))));
+          }
         }
         break;
       case 'piano':
