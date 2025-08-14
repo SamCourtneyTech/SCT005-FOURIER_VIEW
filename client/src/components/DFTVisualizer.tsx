@@ -15,15 +15,12 @@ import type { UploadResult } from "@uppy/core";
 const EXAMPLE_AUDIO_OPTIONS = [
   { value: "full_song", label: "Full Song" },
   { value: "drums", label: "Drums" },
-  { value: "electronic_drums", label: "Electronic Drums" },
   { value: "vocal", label: "Vocal" },
   { value: "bass", label: "Bass" },
   { value: "synth", label: "Synth" },
   { value: "electric_guitar", label: "Electric Guitar" },
   { value: "piano", label: "Piano" },
   { value: "acoustic_guitar", label: "Acoustic Guitar" },
-  { value: "edm_lead", label: "EDM Lead" },
-  { value: "edm_bass", label: "EDM Bass" },
 ];
 
 export function DFTVisualizer() {

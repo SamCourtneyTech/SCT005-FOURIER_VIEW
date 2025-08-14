@@ -130,16 +130,24 @@ export function useAudioProcessor() {
         }
         break;
       case 'piano':
-        // Piano-like attack and decay
-        for (let i = 0; i < frameCount; i++) {
-          const t = i / sampleRate;
-          const noteTime = t % 0.5; // New note every 0.5 seconds
-          const envelope = Math.exp(-noteTime * 3);
-          channelData[i] = envelope * 0.5 * (
-            Math.sin(2 * Math.PI * 440 * t) +
-            0.5 * Math.sin(2 * Math.PI * 880 * t) +
-            0.25 * Math.sin(2 * Math.PI * 1320 * t)
-          );
+        // Load uploaded piano MP3 file
+        try {
+          const pianoUrl = new URL('@assets/FV_Piano_1755136860063.mp3', import.meta.url).href;
+          await loadAudioFile(pianoUrl);
+          return; // Return early since loadAudioFile handles the buffer setup
+        } catch (error) {
+          console.error('Error loading piano file, falling back to synthetic:', error);
+          // Fallback to synthetic piano sound
+          for (let i = 0; i < frameCount; i++) {
+            const t = i / sampleRate;
+            const noteTime = t % 0.5; // New note every 0.5 seconds
+            const envelope = Math.exp(-noteTime * 3);
+            channelData[i] = envelope * 0.5 * (
+              Math.sin(2 * Math.PI * 440 * t) +
+              0.5 * Math.sin(2 * Math.PI * 880 * t) +
+              0.25 * Math.sin(2 * Math.PI * 1320 * t)
+            );
+          }
         }
         break;
       default:
