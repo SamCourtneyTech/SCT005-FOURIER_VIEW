@@ -291,8 +291,16 @@ export function useAudioProcessor() {
       source.connect(analyserNode);
       
       const offset = pauseTimeRef.current;
-      source.start(0, offset);
-      startTimeRef.current = audioContext.currentTime - offset;
+      if (offset >= audioBuffer.duration) {
+        // If we're at or past the end, restart from beginning
+        source.start(0, 0);
+        startTimeRef.current = audioContext.currentTime;
+        pauseTimeRef.current = 0;
+      } else {
+        // Resume from pause position
+        source.start(0, offset);
+        startTimeRef.current = audioContext.currentTime - offset;
+      }
       
       source.onended = () => {
         setIsPlaying(false);
