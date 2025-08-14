@@ -35,6 +35,7 @@ export function useAudioProcessor() {
       
       const analyser = ctx.createAnalyser();
       analyser.fftSize = 2048;
+      analyser.connect(ctx.destination);
       setAnalyserNode(analyser);
       setFrequencyResolution(ctx.sampleRate / analyser.fftSize);
     }
@@ -87,57 +88,28 @@ export function useAudioProcessor() {
     }
   }, [audioContext, initializeAudioContext, stopExistingAudio]);
 
-  // Load example audio (synthetic)
+  // Load example audio from attached assets
   const loadExampleAudio = useCallback(async (audioType: string) => {
     await initializeAudioContext();
     if (!audioContext) return;
 
-    const duration = 5.0;
-    const sampleRate = audioContext.sampleRate;
-    const buffer = audioContext.createBuffer(1, sampleRate * duration, sampleRate);
-    
-    // Generate different types of audio based on selection
-    const channelData = buffer.getChannelData(0);
-    for (let i = 0; i < channelData.length; i++) {
-      const t = i / sampleRate;
-      switch (audioType) {
-        case 'full_song':
-          channelData[i] = 0.3 * (Math.sin(2 * Math.PI * 440 * t) + 0.5 * Math.sin(2 * Math.PI * 880 * t) + 0.3 * Math.sin(2 * Math.PI * 220 * t));
-          break;
-        case 'drums':
-          channelData[i] = 0.5 * (Math.random() - 0.5) * Math.exp(-t % 0.5 * 10);
-          break;
-        case 'vocal':
-          channelData[i] = 0.4 * Math.sin(2 * Math.PI * (440 + 20 * Math.sin(2 * Math.PI * 5 * t)) * t);
-          break;
-        case 'bass':
-          channelData[i] = 0.6 * Math.sin(2 * Math.PI * 110 * t);
-          break;
-        case 'synth':
-          channelData[i] = 0.4 * Math.sin(2 * Math.PI * 523.25 * t) * (1 + Math.sin(2 * Math.PI * 3 * t)) / 2;
-          break;
-        case 'electric_guitar':
-          channelData[i] = 0.5 * Math.tanh(3 * Math.sin(2 * Math.PI * 329.63 * t));
-          break;
-        case 'acoustic_guitar':
-          channelData[i] = 0.4 * Math.sin(2 * Math.PI * 329.63 * t) * Math.exp(-t % 1.0 * 2);
-          break;
-        case 'piano':
-        default:
-          channelData[i] = 0.5 * Math.sin(2 * Math.PI * 440 * t) * Math.exp(-t % 2.0 * 1.5);
-          break;
-      }
-    }
+    // Map to actual audio file URLs
+    const audioFiles: Record<string, string> = {
+      'full_song': '/attached_assets/fv_full_song_1755138764578.mp3',
+      'drums': '/attached_assets/fv_drums_1755138718109.mp3', 
+      'vocal': '/attached_assets/fv_vocal_1755138621004.mp3',
+      'bass': '/attached_assets/fv_bass_1755138681956.mp3',
+      'synth': '/attached_assets/fv_synth_1755138233942.mp3',
+      'electric_guitar': '/attached_assets/FV_ec_guitar_1755137041080.mp3',
+      'acoustic_guitar': '/attached_assets/FV_ac_guitar_1755138282773.mp3',
+      'piano': '/attached_assets/fv_piano_normalized_1755137880955.mp3'
+    };
 
-    stopExistingAudio();
-    
-    setAudioBuffer(buffer);
-    setDuration(buffer.duration);
-    setCurrentTime(0);
-    setPlaybackProgress(0);
-    setPausedAt(0);
-    setPlaybackOffset(0);
-  }, [audioContext, initializeAudioContext, stopExistingAudio]);
+    const audioUrl = audioFiles[audioType];
+    if (audioUrl) {
+      await loadAudioFile(audioUrl);
+    }
+  }, [audioContext, initializeAudioContext, loadAudioFile]);
 
   // Toggle play/pause
   const togglePlayPause = useCallback(() => {
