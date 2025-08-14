@@ -95,14 +95,31 @@ export function DFTVisualizer() {
           credentials: "include",
         });
         
+        // Extract object ID from the signed URL and create server endpoint
+        let serverURL = uploadURL;
+        if (uploadURL.includes('storage.googleapis.com')) {
+          // Extract the path after the bucket name
+          const urlObj = new URL(uploadURL);
+          const pathParts = urlObj.pathname.split('/');
+          if (pathParts.length >= 3) {
+            // Format: /bucket_name/path_to_object -> /objects/path_after_private_dir
+            const objectPath = pathParts.slice(2).join('/');
+            // Check if it's in the private directory structure
+            if (objectPath.includes('uploads/')) {
+              const uploadId = objectPath.split('uploads/')[1];
+              serverURL = `/objects/uploads/${uploadId}`;
+            }
+          }
+        }
+        
         // Set uploaded file info and switch to uploaded audio
         setUploadedFileName(fileName);
-        setUploadedFileURL(uploadURL);
+        setUploadedFileURL(serverURL);
         setCurrentAudioSource("uploaded");
         setSelectedExampleAudio(""); // Clear example selection
         
-        // Load the uploaded audio
-        await loadAudioFile(uploadURL);
+        // Load the uploaded audio through our server
+        await loadAudioFile(serverURL);
       }
     }
   };

@@ -361,15 +361,17 @@ export function useAudioProcessor() {
 
   // Update playback time and audio analysis
   useEffect(() => {
-    if (!isPlaying || !audioContext || !analyserNode || timerFrozen) return;
+    if (!isPlaying || !audioContext || !analyserNode) return;
 
-    const updateTime = () => {
-      if (timerFrozen) return; // Stop updating when frozen
-      
+    const updateTime = () => {      
       const elapsedFromStart = audioContext.currentTime - audioStartTime;
       const currentPos = playbackOffset + elapsedFromStart;
-      setCurrentTime(currentPos);
-      setPlaybackProgress((currentPos / duration) * 100);
+      
+      // Only update display time when not frozen
+      if (!timerFrozen) {
+        setCurrentTime(currentPos);
+        setPlaybackProgress((currentPos / duration) * 100);
+      }
 
       // Analyze audio for real-time data
       const bufferLength = analyserNode.frequencyBinCount;
@@ -407,13 +409,13 @@ export function useAudioProcessor() {
       setPeakFrequency(dominantFrequency);
       setPeakMagnitude(20 * Math.log10(maxValue / 255 + 1e-10));
 
-      if (currentPos < duration && !timerFrozen) {
+      if (currentPos < duration) {
         requestAnimationFrame(updateTime);
       }
     };
 
     updateTime();
-  }, [isPlaying, audioContext, analyserNode, duration, audioStartTime, playbackOffset, timerFrozen]);
+  }, [isPlaying, audioContext, analyserNode, duration, audioStartTime, playbackOffset]);
 
   return {
     audioContext,
