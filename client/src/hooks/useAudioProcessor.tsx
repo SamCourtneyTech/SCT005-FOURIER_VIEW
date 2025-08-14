@@ -102,15 +102,23 @@ export function useAudioProcessor() {
         }
         break;
       case 'drums':
-        // Percussive sound with noise bursts
-        for (let i = 0; i < frameCount; i++) {
-          const t = i / sampleRate;
-          const beat = Math.floor(t * 4) % 4;
-          const beatTime = (t * 4) % 1;
-          if (beatTime < 0.1) {
-            channelData[i] = (Math.random() - 0.5) * Math.exp(-beatTime * 20) * 0.8;
-          } else {
-            channelData[i] = 0;
+        // Load uploaded drums MP3 file
+        try {
+          const drumsUrl = new URL('@assets/fv_drums_1755138718109.mp3', import.meta.url).href;
+          await loadAudioFile(drumsUrl);
+          return; // Return early since loadAudioFile handles the buffer setup
+        } catch (error) {
+          console.error('Error loading drums file, falling back to synthetic:', error);
+          // Fallback to synthetic drums sound
+          for (let i = 0; i < frameCount; i++) {
+            const t = i / sampleRate;
+            const beat = Math.floor(t * 4) % 4;
+            const beatTime = (t * 4) % 1;
+            if (beatTime < 0.1) {
+              channelData[i] = (Math.random() - 0.5) * Math.exp(-beatTime * 20) * 0.8;
+            } else {
+              channelData[i] = 0;
+            }
           }
         }
         break;
