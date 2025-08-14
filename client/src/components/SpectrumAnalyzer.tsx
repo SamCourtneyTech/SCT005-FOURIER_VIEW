@@ -20,7 +20,7 @@ export function SpectrumAnalyzer({
   sampleWindow,
   dftResults,
 }: SpectrumAnalyzerProps) {
-  const [isLogScale, setIsLogScale] = useState(false);
+  const [isLogScale] = useState(false); // Removed toggle functionality
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>();
   const frozenDftResultsRef = useRef<{ real: number; imag: number; magnitude: number; phase: number }[]>([]);
@@ -194,16 +194,6 @@ export function SpectrumAnalyzer({
         </div>
         <div className="flex items-center space-x-2 text-xs text-text-secondary">
           <span>|X[k]|</span>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsLogScale(!isLogScale)}
-            className={`px-2 py-1 text-xs ${
-              isLogScale ? 'bg-gray-600 text-white' : 'bg-gray-700 hover:bg-gray-600'
-            }`}
-          >
-            Log Scale
-          </Button>
         </div>
       </div>
 
