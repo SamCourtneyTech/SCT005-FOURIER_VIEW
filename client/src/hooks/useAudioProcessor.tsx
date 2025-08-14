@@ -38,6 +38,16 @@ export function useAudioProcessor() {
     }
   }, [audioContext]);
 
+  // Stop any existing audio before starting new audio
+  const stopExistingAudio = useCallback(() => {
+    if (sourceNode) {
+      sourceNode.stop();
+      setSourceNode(null);
+    }
+    setIsPlaying(false);
+    setTimerFrozen(false);
+  }, [sourceNode]);
+
   // Load audio file from URL with better M4A support
   const loadAudioFile = useCallback(async (url: string) => {
     await initializeAudioContext();
@@ -62,24 +72,24 @@ export function useAudioProcessor() {
         }
       });
       
+      // Stop any existing audio first
+      stopExistingAudio();
+      
       setAudioBuffer(decodedBuffer);
       setDuration(decodedBuffer.duration);
       setCurrentTime(0);
       setPlaybackProgress(0);
-      // Reset playback state only when not paused
-      if (!isPlaying) {
-        setPausedAt(0);
-        setPlaybackOffset(0);
-        setTimerFrozen(false);
-        setFrozenTime(0);
-      }
+      setPausedAt(0);
+      setPlaybackOffset(0);
+      setTimerFrozen(false);
+      setFrozenTime(0);
     } catch (error) {
       console.error('Error loading audio file:', error);
       // Show user-friendly error for unsupported formats
       const errorMessage = error instanceof Error ? error.message : 'Could not load audio file. Please try MP3, WAV, or OGG format.';
       alert(errorMessage);
     }
-  }, [audioContext, initializeAudioContext]);
+  }, [audioContext, initializeAudioContext, stopExistingAudio]);
 
   // Generate example audio programmatically for demonstration
   const loadExampleAudio = useCallback(async (exampleType: string) => {
@@ -265,16 +275,16 @@ export function useAudioProcessor() {
         }
     }
 
+    // Stop any existing audio first
+    stopExistingAudio();
+    
     setAudioBuffer(buffer);
     setDuration(buffer.duration);
     setCurrentTime(0);
     setPlaybackProgress(0);
-    // Reset playback state only when not paused
-    if (!isPlaying) {
-      setPausedAt(0);
-      setPlaybackOffset(0);
-    }
-  }, [audioContext, initializeAudioContext]);
+    setPausedAt(0);
+    setPlaybackOffset(0);
+  }, [audioContext, initializeAudioContext, stopExistingAudio]);
 
   // Toggle play/pause
   const togglePlayPause = useCallback(async () => {

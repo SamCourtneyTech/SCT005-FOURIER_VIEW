@@ -119,8 +119,20 @@ export function DFTVisualizer() {
         setCurrentAudioSource("uploaded");
         setSelectedExampleAudio(""); // Clear example selection
         
-        // Load the uploaded audio through our server (auto-play ready)
-        await loadAudioFile(serverURL);
+        // Load the uploaded audio through our server
+        try {
+          await loadAudioFile(serverURL);
+          console.log('Successfully loaded uploaded audio:', serverURL);
+        } catch (error) {
+          console.error('Failed to load uploaded audio:', error);
+          // Fallback to direct URL if server endpoint fails
+          try {
+            await loadAudioFile(uploadURL);
+            console.log('Fallback: loaded audio from signed URL');
+          } catch (fallbackError) {
+            console.error('Both server and direct URL failed:', fallbackError);
+          }
+        }
       }
     }
   };
