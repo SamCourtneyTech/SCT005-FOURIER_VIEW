@@ -53,6 +53,9 @@ export function useAudioProcessor() {
     await initializeAudioContext();
     if (!audioContext) return;
 
+    // Stop any existing audio first, before starting new loading
+    stopExistingAudio();
+
     try {
       const response = await fetch(url);
       const arrayBuffer = await response.arrayBuffer();
@@ -71,9 +74,6 @@ export function useAudioProcessor() {
           throw new Error('Audio file format not supported by browser. Please try MP3, WAV, or OGG format.');
         }
       });
-      
-      // Stop any existing audio first
-      stopExistingAudio();
       
       setAudioBuffer(decodedBuffer);
       setDuration(decodedBuffer.duration);
