@@ -317,59 +317,40 @@ export function useAudioProcessor() {
     }
 
     if (isPlaying) {
-      // Pause - calculate and store the exact position
+      // Pause: simply stop the audio and keep current time
       if (sourceNode) {
         sourceNode.stop();
         setSourceNode(null);
       }
-      
-      const elapsedTime = audioContext.currentTime - audioStartTime;
-      const currentPosition = playbackOffset + elapsedTime;
-      const pausePosition = Math.max(0, Math.min(currentPosition, audioBuffer.duration));
-      
-      setPausedAt(pausePosition);
-      setPlaybackOffset(pausePosition);
-      setTimerFrozen(true);
-      setFrozenTime(pausePosition);
-      setCurrentTime(pausePosition);
-      setPlaybackProgress(audioBuffer.duration > 0 ? (pausePosition / audioBuffer.duration) * 100 : 0);
       setIsPlaying(false);
     } else {
-      // Resume/Play from current position shown on progress bar
+      // Play: always start from current time index
       const source = audioContext.createBufferSource();
       source.buffer = audioBuffer;
       source.connect(analyserNode);
       
-      // Use current time as the start position (this reflects progress bar position)
-      // If we just seeked, use pausedAt which reflects the most recent seek position
-      const startOffset = Math.max(currentTime, pausedAt);
+      // Always use currentTime as the authoritative position
+      const startTime = Math.max(0, Math.min(currentTime, audioBuffer.duration));
       
-      if (startOffset >= audioBuffer.duration) {
+      if (startTime >= audioBuffer.duration) {
         // If at end, restart from beginning
-        source.start(0, 0);
-        setPlaybackOffset(0);
-        setPausedAt(0);
         setCurrentTime(0);
         setPlaybackProgress(0);
+        source.start(0, 0);
+        setPlaybackOffset(0);
       } else {
-        // Start from current progress bar position
-        source.start(0, startOffset);
-        setPlaybackOffset(startOffset);
-        setPausedAt(startOffset);
+        source.start(0, startTime);
+        setPlaybackOffset(startTime);
       }
       
       setAudioStartTime(audioContext.currentTime);
-      setTimerFrozen(false);
       
       source.onended = () => {
         setIsPlaying(false);
         setSourceNode(null);
-        setPausedAt(0);
-        setPlaybackOffset(0);
         setCurrentTime(0);
         setPlaybackProgress(0);
-        setTimerFrozen(false);
-        setFrozenTime(0);
+        setPlaybackOffset(0);
       };
       
       setSourceNode(source);
@@ -377,27 +358,26 @@ export function useAudioProcessor() {
     }
   }, [audioContext, audioBuffer, analyserNode, sourceNode, isPlaying, audioStartTime, playbackOffset, pausedAt, currentTime]);
 
-  // Seek to a specific time position
+  // Seek to a specific time position - simplified and time-index driven
   const seekTo = useCallback((timePosition: number) => {
-    if (!audioBuffer || !audioContext || !analyserNode) return;
+    if (!audioBuffer) return;
     
     const clampedPosition = Math.max(0, Math.min(timePosition, audioBuffer.duration));
-    const wasPlaying = isPlaying;
+    console.log('Seeking to position:', clampedPosition, 'seconds');
     
-    // Always stop current source if it exists
+    // Stop any playing audio
     if (sourceNode) {
       sourceNode.stop();
       setSourceNode(null);
     }
     
-    // Update all position states immediately
+    // Update time index - this is the single source of truth
     setCurrentTime(clampedPosition);
-    setPausedAt(clampedPosition);
-    setPlaybackOffset(clampedPosition);
     setPlaybackProgress(audioBuffer.duration > 0 ? (clampedPosition / audioBuffer.duration) * 100 : 0);
+    setPlaybackOffset(clampedPosition);
     
-    if (wasPlaying) {
-      // If was playing, start new source from sought position and maintain playing state
+    // If currently playing, restart from new position
+    if (isPlaying && audioContext && analyserNode) {
       const source = audioContext.createBufferSource();
       source.buffer = audioBuffer;
       source.connect(analyserNode);
@@ -405,21 +385,14 @@ export function useAudioProcessor() {
       
       setSourceNode(source);
       setAudioStartTime(audioContext.currentTime);
-      setIsPlaying(true); // Ensure playing state is maintained
       
       source.onended = () => {
         setIsPlaying(false);
         setSourceNode(null);
-        setPausedAt(0);
-        setPlaybackOffset(0);
         setCurrentTime(0);
         setPlaybackProgress(0);
-        setTimerFrozen(false);
-        setFrozenTime(0);
+        setPlaybackOffset(0);
       };
-    } else {
-      // If was paused, stay paused - no need to set frozen time since we're not playing
-      setIsPlaying(false); // Ensure paused state is maintained
     }
   }, [audioBuffer, audioContext, analyserNode, sourceNode, isPlaying]);
 
@@ -438,7 +411,7 @@ export function useAudioProcessor() {
     setFrozenTime(0);
   }, [sourceNode]);
 
-  // Update playback time and audio analysis
+  // Update playback time and audio analysis - simplified
   useEffect(() => {
     if (!isPlaying || !audioContext || !analyserNode) return;
 
@@ -446,7 +419,7 @@ export function useAudioProcessor() {
       const elapsedFromStart = audioContext.currentTime - audioStartTime;
       const currentPos = playbackOffset + elapsedFromStart;
       
-      // Only update display time when playing and we have a valid duration
+      // Update time index continuously while playing
       if (duration > 0) {
         const clampedPos = Math.max(0, Math.min(currentPos, duration));
         setCurrentTime(clampedPos);
