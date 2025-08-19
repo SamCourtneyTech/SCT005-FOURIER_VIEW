@@ -307,6 +307,7 @@ export function useAudioProcessor() {
 
   // Toggle play/pause
   const togglePlayPause = useCallback(async () => {
+    console.log('🎮 TOGGLE called: isPlaying =', isPlaying);
     // Initialize audio context if needed (especially for mobile)
     if (!audioContext) {
       await initializeAudioContext();
@@ -371,7 +372,7 @@ export function useAudioProcessor() {
     if (!audioBuffer || !audioContext || !analyserNode) return;
     
     const clampedPosition = Math.max(0, Math.min(timePosition, audioBuffer.duration));
-    console.log('Seeking to position:', clampedPosition, 'seconds');
+    console.log('🎯 SEEK START: Seeking to position:', clampedPosition, 'seconds', 'wasPlaying:', isPlaying);
     
     const wasPlaying = isPlaying;
     
@@ -380,20 +381,24 @@ export function useAudioProcessor() {
       try {
         sourceNode.stop();
         sourceNode.disconnect();
+        console.log('🛑 SEEK: Stopped existing source');
       } catch (e) {
-        // Already stopped, ignore
+        console.log('🛑 SEEK: Source already stopped');
       }
       setSourceNode(null);
     }
     setIsPlaying(false);
+    console.log('🛑 SEEK: Set isPlaying to false');
     
     // STEP 2: Update time index to clicked position
     setCurrentTime(clampedPosition);
     setPlaybackProgress(audioBuffer.duration > 0 ? (clampedPosition / audioBuffer.duration) * 100 : 0);
     setPlaybackOffset(clampedPosition);
+    console.log('⏰ SEEK: Updated time index to', clampedPosition);
     
     // STEP 3: If was playing, immediately start new stream from new position
     if (wasPlaying) {
+      console.log('▶️ SEEK: Starting new source at', clampedPosition);
       const source = audioContext.createBufferSource();
       source.buffer = audioBuffer;
       source.connect(analyserNode);
@@ -402,6 +407,7 @@ export function useAudioProcessor() {
       setSourceNode(source);
       setAudioStartTime(audioContext.currentTime);
       setIsPlaying(true);
+      console.log('✅ SEEK: New source started and isPlaying set to true');
       
       source.onended = () => {
         setIsPlaying(false);
@@ -410,7 +416,10 @@ export function useAudioProcessor() {
         setPlaybackProgress(0);
         setPlaybackOffset(0);
       };
+    } else {
+      console.log('⏸️ SEEK: Was not playing, staying paused');
     }
+    console.log('🎯 SEEK END: Complete');
   }, [audioBuffer, audioContext, analyserNode, sourceNode, isPlaying]);
 
   // Stop audio with proper cleanup
