@@ -416,14 +416,16 @@ export function useAudioProcessor() {
     if (!isPlaying || !audioContext || !analyserNode) return;
 
     const updateTime = () => {      
-      const elapsedFromStart = audioContext.currentTime - audioStartTime;
-      const currentPos = playbackOffset + elapsedFromStart;
-      
-      // Update time index continuously while playing
-      if (duration > 0) {
-        const clampedPos = Math.max(0, Math.min(currentPos, duration));
-        setCurrentTime(clampedPos);
-        setPlaybackProgress((clampedPos / duration) * 100);
+      // Only update time index when actually playing
+      if (isPlaying) {
+        const elapsedFromStart = audioContext.currentTime - audioStartTime;
+        const currentPos = playbackOffset + elapsedFromStart;
+        
+        if (duration > 0) {
+          const clampedPos = Math.max(0, Math.min(currentPos, duration));
+          setCurrentTime(clampedPos);
+          setPlaybackProgress((clampedPos / duration) * 100);
+        }
       }
 
       // Analyze audio for real-time data
