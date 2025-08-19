@@ -22,6 +22,7 @@ export function useAudioProcessor() {
   const [playbackOffset, setPlaybackOffset] = useState<number>(0);
   const [timerFrozen, setTimerFrozen] = useState<boolean>(false);
   const [frozenTime, setFrozenTime] = useState<number>(0);
+  const [isSeeking, setIsSeeking] = useState<boolean>(false);
 
   // Initialize audio context
   const initializeAudioContext = useCallback(async () => {
@@ -307,7 +308,14 @@ export function useAudioProcessor() {
 
   // Toggle play/pause
   const togglePlayPause = useCallback(async () => {
-    console.log('🎮 TOGGLE called: isPlaying =', isPlaying);
+    console.log('🎮 TOGGLE called: isPlaying =', isPlaying, 'isSeeking =', isSeeking);
+    
+    // Don't do anything if we're currently seeking
+    if (isSeeking) {
+      console.log('🚫 TOGGLE: Blocked - currently seeking');
+      return;
+    }
+    
     // Initialize audio context if needed (especially for mobile)
     if (!audioContext) {
       await initializeAudioContext();
@@ -374,6 +382,8 @@ export function useAudioProcessor() {
     const clampedPosition = Math.max(0, Math.min(timePosition, audioBuffer.duration));
     console.log('🎯 SEEK START: Seeking to position:', clampedPosition, 'seconds', 'wasPlaying:', isPlaying);
     
+    // Set seeking flag to prevent togglePlayPause interference
+    setIsSeeking(true);
     const wasPlaying = isPlaying;
     
     // STEP 1: Reset current audio stream completely
@@ -419,6 +429,13 @@ export function useAudioProcessor() {
     } else {
       console.log('⏸️ SEEK: Was not playing, staying paused');
     }
+    
+    // Clear seeking flag after a brief delay to allow state updates to complete
+    setTimeout(() => {
+      setIsSeeking(false);
+      console.log('🏁 SEEK: Seeking flag cleared');
+    }, 50);
+    
     console.log('🎯 SEEK END: Complete');
   }, [audioBuffer, audioContext, analyserNode, sourceNode, isPlaying]);
 
