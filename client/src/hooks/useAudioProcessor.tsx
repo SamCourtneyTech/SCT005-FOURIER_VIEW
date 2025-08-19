@@ -337,7 +337,7 @@ export function useAudioProcessor() {
       source.buffer = audioBuffer;
       source.connect(analyserNode);
       
-      // Always use currentTime as the authoritative position
+      // Always use currentTime as the authoritative position (access current value)
       const startTime = Math.max(0, Math.min(currentTime, audioBuffer.duration));
       
       if (startTime >= audioBuffer.duration) {
@@ -364,7 +364,7 @@ export function useAudioProcessor() {
       setSourceNode(source);
       setIsPlaying(true);
     }
-  }, [audioContext, audioBuffer, analyserNode, sourceNode, isPlaying, audioStartTime, playbackOffset, pausedAt, currentTime]);
+  }, [audioContext, audioBuffer, analyserNode, sourceNode, isPlaying]);
 
   // Seek to a specific time position - reset stream, update time, restart
   const seekTo = useCallback((timePosition: number) => {
