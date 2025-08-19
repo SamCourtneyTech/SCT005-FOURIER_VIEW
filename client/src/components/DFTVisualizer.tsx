@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Play, Pause, Upload } from "lucide-react";
+import { Play, Square, Upload } from "lucide-react";
 import { TimeDomainSection } from "./TimeDomainSection";
 import { DFTCalculationSection } from "./DFTCalculationSection";
 import { SummationSection } from "./SummationSection";
@@ -256,7 +256,7 @@ export function DFTVisualizer() {
                 onClick={togglePlayPause}
                 className="text-success hover:text-green-400 text-xl p-2"
               >
-                {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
+                {isPlaying ? <Square className="w-5 h-5" /> : <Play className="w-5 h-5" />}
               </Button>
 
               <div 
