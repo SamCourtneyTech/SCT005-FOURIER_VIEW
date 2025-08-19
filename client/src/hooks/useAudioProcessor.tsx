@@ -77,12 +77,14 @@ export function useAudioProcessor() {
       
       setAudioBuffer(decodedBuffer);
       setDuration(decodedBuffer.duration);
+      // Reset all playback states when loading new audio
       setCurrentTime(0);
       setPlaybackProgress(0);
       setPausedAt(0);
       setPlaybackOffset(0);
       setTimerFrozen(false);
       setFrozenTime(0);
+      setIsPlaying(false);
     } catch (error) {
       console.error('Error loading audio file:', error);
       // Show user-friendly error for unsupported formats
@@ -287,48 +289,14 @@ export function useAudioProcessor() {
     setAudioBuffer(buffer);
     setDuration(buffer.duration);
     
-    // If we have a saved position and were playing, restore it
-    if (currentPosition > 0 && currentPosition < buffer.duration) {
-      setCurrentTime(currentPosition);
-      setPlaybackProgress((currentPosition / buffer.duration) * 100);
-      setPausedAt(currentPosition);
-      setPlaybackOffset(currentPosition);
-      
-      // If we were playing, start playing from the saved position
-      if (wasPlaying) {
-        const source = audioContext.createBufferSource();
-        source.buffer = buffer;
-        source.connect(analyserNode!);
-        source.start(0, currentPosition);
-        
-        setSourceNode(source);
-        setAudioStartTime(audioContext.currentTime);
-        setIsPlaying(true);
-        setTimerFrozen(false);
-        
-        source.onended = () => {
-          setIsPlaying(false);
-          setSourceNode(null);
-          setPausedAt(0);
-          setPlaybackOffset(0);
-          setCurrentTime(0);
-          setPlaybackProgress(0);
-          setTimerFrozen(false);
-          setFrozenTime(0);
-        };
-      } else {
-        setTimerFrozen(true);
-        setFrozenTime(currentPosition);
-      }
-    } else {
-      // New audio, start from beginning
-      setCurrentTime(0);
-      setPlaybackProgress(0);
-      setPausedAt(0);
-      setPlaybackOffset(0);
-      setTimerFrozen(false);
-      setFrozenTime(0);
-    }
+    // Always reset to beginning when changing audio sources for better UX
+    setCurrentTime(0);
+    setPlaybackProgress(0);
+    setPausedAt(0);
+    setPlaybackOffset(0);
+    setTimerFrozen(false);
+    setFrozenTime(0);
+    setIsPlaying(false);
   }, [audioContext, initializeAudioContext, stopExistingAudio, isPlaying, playbackOffset, audioStartTime, pausedAt, analyserNode]);
 
   // Toggle play/pause
@@ -360,7 +328,7 @@ export function useAudioProcessor() {
       setTimerFrozen(true);
       setFrozenTime(pausePosition);
       setCurrentTime(pausePosition);
-      setPlaybackProgress((pausePosition / audioBuffer.duration) * 100);
+      setPlaybackProgress(audioBuffer.duration > 0 ? (pausePosition / audioBuffer.duration) * 100 : 0);
       setIsPlaying(false);
     } else {
       // Resume/Play from paused position
@@ -417,7 +385,7 @@ export function useAudioProcessor() {
     setPausedAt(clampedPosition);
     setPlaybackOffset(clampedPosition);
     setCurrentTime(clampedPosition);
-    setPlaybackProgress((clampedPosition / audioBuffer.duration) * 100);
+    setPlaybackProgress(audioBuffer.duration > 0 ? (clampedPosition / audioBuffer.duration) * 100 : 0);
     
     if (isPlaying) {
       // If was playing, start new source from sought position
@@ -470,10 +438,11 @@ export function useAudioProcessor() {
       const elapsedFromStart = audioContext.currentTime - audioStartTime;
       const currentPos = playbackOffset + elapsedFromStart;
       
-      // Only update display time when not frozen
-      if (!timerFrozen) {
-        setCurrentTime(currentPos);
-        setPlaybackProgress((currentPos / duration) * 100);
+      // Only update display time when not frozen and we have a valid duration
+      if (!timerFrozen && duration > 0) {
+        const clampedPos = Math.max(0, Math.min(currentPos, duration));
+        setCurrentTime(clampedPos);
+        setPlaybackProgress((clampedPos / duration) * 100);
       }
 
       // Analyze audio for real-time data
