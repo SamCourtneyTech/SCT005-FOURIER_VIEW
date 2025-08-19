@@ -341,7 +341,8 @@ export function useAudioProcessor() {
       source.connect(analyserNode);
       
       // Use current time as the start position (this reflects progress bar position)
-      const startOffset = currentTime;
+      // If we just seeked, use pausedAt which reflects the most recent seek position
+      const startOffset = Math.max(currentTime, pausedAt);
       
       if (startOffset >= audioBuffer.duration) {
         // If at end, restart from beginning
@@ -389,10 +390,10 @@ export function useAudioProcessor() {
       setSourceNode(null);
     }
     
-    // Update position states
+    // Update all position states immediately
+    setCurrentTime(clampedPosition);
     setPausedAt(clampedPosition);
     setPlaybackOffset(clampedPosition);
-    setCurrentTime(clampedPosition);
     setPlaybackProgress(audioBuffer.duration > 0 ? (clampedPosition / audioBuffer.duration) * 100 : 0);
     
     if (wasPlaying) {
