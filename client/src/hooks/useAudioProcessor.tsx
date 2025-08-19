@@ -41,7 +41,11 @@ export function useAudioProcessor() {
   // Stop any existing audio before starting new audio
   const stopExistingAudio = useCallback(() => {
     if (sourceNode) {
-      sourceNode.stop();
+      try {
+        sourceNode.stop();
+      } catch (error) {
+        // Source might already be stopped, ignore error
+      }
       setSourceNode(null);
     }
     setIsPlaying(false);
@@ -377,6 +381,7 @@ export function useAudioProcessor() {
     if (!audioBuffer || !audioContext || !analyserNode) return;
     
     const clampedPosition = Math.max(0, Math.min(timePosition, audioBuffer.duration));
+    const wasPlaying = isPlaying;
     
     // Always stop current source if it exists
     if (sourceNode) {
@@ -390,8 +395,8 @@ export function useAudioProcessor() {
     setCurrentTime(clampedPosition);
     setPlaybackProgress(audioBuffer.duration > 0 ? (clampedPosition / audioBuffer.duration) * 100 : 0);
     
-    if (isPlaying) {
-      // If was playing, start new source from sought position
+    if (wasPlaying) {
+      // If was playing, start new source from sought position and maintain playing state
       const source = audioContext.createBufferSource();
       source.buffer = audioBuffer;
       source.connect(analyserNode);
@@ -400,6 +405,7 @@ export function useAudioProcessor() {
       setSourceNode(source);
       setAudioStartTime(audioContext.currentTime);
       setTimerFrozen(false);
+      setIsPlaying(true); // Ensure playing state is maintained
       
       source.onended = () => {
         setIsPlaying(false);
@@ -413,6 +419,7 @@ export function useAudioProcessor() {
       };
     } else {
       // If was paused, stay paused but update frozen time
+      setIsPlaying(false); // Ensure paused state is maintained
       setTimerFrozen(true);
       setFrozenTime(clampedPosition);
     }
