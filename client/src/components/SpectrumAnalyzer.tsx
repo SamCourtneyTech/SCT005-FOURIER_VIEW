@@ -1,6 +1,65 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 
+// Function to process frequency data based on analysis mode
+function processFrequencyData(
+  dftResults: { real: number; imag: number; magnitude: number; phase: number }[],
+  analysisMode: "raw" | "normalized",
+  sampleWindow: number
+): number[] {
+  if (!dftResults || dftResults.length === 0) {
+    return [];
+  }
+
+  if (analysisMode === "raw") {
+    // Return raw magnitudes
+    return dftResults.slice(0, sampleWindow).map(result => result.magnitude);
+  }
+
+  // Normalized processing following DSP best practices
+  const magnitudes = dftResults.slice(0, sampleWindow).map(result => result.magnitude);
+  
+  // 1. Detrend: subtract mean (simulated since we're working with DFT results)
+  const mean = magnitudes.reduce((sum, val) => sum + val, 0) / magnitudes.length;
+  const detrendedMagnitudes = magnitudes.map(mag => mag - mean);
+  
+  // 2. Apply Hann window scaling correction
+  // For a Hann window, coherent gain CG = 0.5
+  const CG = 0.5;
+  const N = sampleWindow;
+  
+  // 3. Correct scaling for one-sided spectrum
+  const normalizedMagnitudes = detrendedMagnitudes.map((mag, k) => {
+    const absMag = Math.abs(mag);
+    if (k === 0 || k === Math.floor(N / 2)) {
+      // DC and Nyquist components (if present)
+      return absMag / (N * CG);
+    } else if (k < N / 2) {
+      // Positive frequency components (double for one-sided)
+      return (2 * absMag) / (N * CG);
+    } else {
+      // Negative frequency components (not displayed in one-sided)
+      return 0;
+    }
+  });
+  
+  // 4. Convert to dB scale for better visualization
+  const dBMagnitudes = normalizedMagnitudes.map(mag => {
+    const linearMag = Math.max(mag, 1e-10); // Avoid log(0)
+    return 20 * Math.log10(linearMag);
+  });
+  
+  // 5. Apply light smoothing (optional, minimal 3-point moving average)
+  const smoothedMagnitudes = dBMagnitudes.map((mag, i) => {
+    if (i === 0 || i === dBMagnitudes.length - 1) return mag;
+    return (dBMagnitudes[i - 1] + mag + dBMagnitudes[i + 1]) / 3;
+  });
+  
+  // Normalize to positive values for visualization
+  const minVal = Math.min(...smoothedMagnitudes);
+  return smoothedMagnitudes.map(mag => mag - minVal);
+}
+
 interface SpectrumAnalyzerProps {
   analyserNode: AnalyserNode | null;
   peakFrequency: number;
@@ -9,6 +68,7 @@ interface SpectrumAnalyzerProps {
   isPlaying?: boolean;
   sampleWindow: number;
   dftResults: { real: number; imag: number; magnitude: number; phase: number }[];
+  analysisMode?: "raw" | "normalized";
 }
 
 export function SpectrumAnalyzer({
@@ -19,6 +79,7 @@ export function SpectrumAnalyzer({
   isPlaying = true,
   sampleWindow,
   dftResults,
+  analysisMode = "raw",
 }: SpectrumAnalyzerProps) {
   const [isLogScale] = useState(false); // Removed toggle functionality
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -49,6 +110,9 @@ export function SpectrumAnalyzer({
 
       // Use frozen data when paused, live data when playing
       const displayResults = isPlaying ? dftResults : frozenDftResultsRef.current;
+      
+      // Apply frequency analysis processing based on mode
+      const processedMagnitudes = processFrequencyData(displayResults, analysisMode, sampleWindow);
 
       // Clear canvas
       ctx.fillStyle = '#1a1a1a';
@@ -132,13 +196,18 @@ export function SpectrumAnalyzer({
       }
 
       // Draw DFT results as frequency spectrum
-      if (displayResults && displayResults.length >= sampleWindow) {
+      if (processedMagnitudes && processedMagnitudes.length >= sampleWindow) {
         const barWidth = gridSpacing * 0.8; // Leave some spacing between bars
         
+        // Find max magnitude for normalization
+        const maxMagnitude = Math.max(...processedMagnitudes.slice(0, sampleWindow));
+        const minMagnitude = Math.min(...processedMagnitudes.slice(0, sampleWindow));
+        const range = maxMagnitude - minMagnitude;
+        
         for (let i = 0; i < sampleWindow; i++) {
-          const magnitude = displayResults[i]?.magnitude || 0;
-          const maxMagnitude = Math.max(...displayResults.slice(0, sampleWindow).map(r => r.magnitude));
-          const normalizedMagnitude = maxMagnitude > 0 ? magnitude / maxMagnitude : 0;
+          const magnitude = processedMagnitudes[i] || 0;
+          // Normalize magnitude for visualization (0 to 1)
+          const normalizedMagnitude = range > 0 ? (magnitude - minMagnitude) / range : 0;
           
           const x = padding + i * gridSpacing + (gridSpacing - barWidth) / 2;
           const barHeight = normalizedMagnitude * (rect.height - 35); // Leave space for labels
