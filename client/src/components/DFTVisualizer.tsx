@@ -139,11 +139,6 @@ export function DFTVisualizer() {
   };
 
   const handleExampleAudioChange = async (value: string) => {
-    // Stop any currently playing audio first
-    if (isPlaying) {
-      await togglePlayPause(); // This will pause current audio
-    }
-    
     setSelectedExampleAudio(value);
     setCurrentAudioSource("example");
     // Don't clear uploaded filename, keep it available for reselection

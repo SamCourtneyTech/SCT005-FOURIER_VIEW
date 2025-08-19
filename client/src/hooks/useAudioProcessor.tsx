@@ -99,6 +99,12 @@ export function useAudioProcessor() {
       return; // Return and let the effect handle the loading once context is ready
     }
 
+    // Remember current playback state
+    const wasPlaying = isPlaying;
+    const currentPosition = wasPlaying ? 
+      playbackOffset + (audioContext.currentTime - audioStartTime) : 
+      pausedAt;
+
     const sampleRate = audioContext.sampleRate;
     const duration = 3; // 3 seconds
     const frameCount = sampleRate * duration;
@@ -280,11 +286,50 @@ export function useAudioProcessor() {
     
     setAudioBuffer(buffer);
     setDuration(buffer.duration);
-    setCurrentTime(0);
-    setPlaybackProgress(0);
-    setPausedAt(0);
-    setPlaybackOffset(0);
-  }, [audioContext, initializeAudioContext, stopExistingAudio]);
+    
+    // If we have a saved position and were playing, restore it
+    if (currentPosition > 0 && currentPosition < buffer.duration) {
+      setCurrentTime(currentPosition);
+      setPlaybackProgress((currentPosition / buffer.duration) * 100);
+      setPausedAt(currentPosition);
+      setPlaybackOffset(currentPosition);
+      
+      // If we were playing, start playing from the saved position
+      if (wasPlaying) {
+        const source = audioContext.createBufferSource();
+        source.buffer = buffer;
+        source.connect(analyserNode!);
+        source.start(0, currentPosition);
+        
+        setSourceNode(source);
+        setAudioStartTime(audioContext.currentTime);
+        setIsPlaying(true);
+        setTimerFrozen(false);
+        
+        source.onended = () => {
+          setIsPlaying(false);
+          setSourceNode(null);
+          setPausedAt(0);
+          setPlaybackOffset(0);
+          setCurrentTime(0);
+          setPlaybackProgress(0);
+          setTimerFrozen(false);
+          setFrozenTime(0);
+        };
+      } else {
+        setTimerFrozen(true);
+        setFrozenTime(currentPosition);
+      }
+    } else {
+      // New audio, start from beginning
+      setCurrentTime(0);
+      setPlaybackProgress(0);
+      setPausedAt(0);
+      setPlaybackOffset(0);
+      setTimerFrozen(false);
+      setFrozenTime(0);
+    }
+  }, [audioContext, initializeAudioContext, stopExistingAudio, isPlaying, playbackOffset, audioStartTime, pausedAt, analyserNode]);
 
   // Toggle play/pause
   const togglePlayPause = useCallback(async () => {
