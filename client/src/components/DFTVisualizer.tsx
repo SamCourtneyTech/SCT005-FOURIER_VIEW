@@ -337,7 +337,7 @@ export function DFTVisualizer() {
         </div>
 
         {/* 4. Frequency Domain Section (Bottom) */}
-        <div className="h-80 flex-shrink-0">
+        <div className="h-96 flex-shrink-0">
           <div className="bg-surface border border-gray-700 rounded-lg p-4 flex flex-col gap-4 h-full">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold text-text-primary">Frequency Domain Spectrum</h3>
