@@ -463,8 +463,9 @@ export function useAudioProcessor() {
       setDominantFreq(dominantFrequency);
       setPeakFrequency(dominantFrequency);
       setPeakMagnitude(20 * Math.log10(maxValue / 255 + 1e-10));
-
-      if (currentPos < duration) {
+      
+      // Continue animation if still playing
+      if (isPlaying) {
         requestAnimationFrame(updateTime);
       }
     };
@@ -476,7 +477,7 @@ export function useAudioProcessor() {
     audioContext,
     analyserNode,
     isPlaying,
-    currentTime: timerFrozen ? frozenTime : currentTime,
+    currentTime,
     duration,
     playbackProgress,
     currentAmplitude,
