@@ -331,27 +331,30 @@ export function useAudioProcessor() {
       setPlaybackProgress(audioBuffer.duration > 0 ? (pausePosition / audioBuffer.duration) * 100 : 0);
       setIsPlaying(false);
     } else {
-      // Resume/Play from paused position
+      // Resume/Play from current position shown on progress bar
       const source = audioContext.createBufferSource();
       source.buffer = audioBuffer;
       source.connect(analyserNode);
       
-      const startOffset = pausedAt;
+      // Use current time as the start position (this reflects progress bar position)
+      const startOffset = currentTime;
       
       if (startOffset >= audioBuffer.duration) {
         // If at end, restart from beginning
         source.start(0, 0);
         setPlaybackOffset(0);
         setPausedAt(0);
-        setTimerFrozen(false);
+        setCurrentTime(0);
+        setPlaybackProgress(0);
       } else {
-        // Start from pause position
+        // Start from current progress bar position
         source.start(0, startOffset);
         setPlaybackOffset(startOffset);
-        setTimerFrozen(false);
+        setPausedAt(startOffset);
       }
       
       setAudioStartTime(audioContext.currentTime);
+      setTimerFrozen(false);
       
       source.onended = () => {
         setIsPlaying(false);
@@ -367,7 +370,7 @@ export function useAudioProcessor() {
       setSourceNode(source);
       setIsPlaying(true);
     }
-  }, [audioContext, audioBuffer, analyserNode, sourceNode, isPlaying, audioStartTime, playbackOffset, pausedAt]);
+  }, [audioContext, audioBuffer, analyserNode, sourceNode, isPlaying, audioStartTime, playbackOffset, pausedAt, currentTime]);
 
   // Seek to a specific time position
   const seekTo = useCallback((timePosition: number) => {
