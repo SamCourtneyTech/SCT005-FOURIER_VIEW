@@ -38,13 +38,15 @@ export function useAudioProcessor() {
     }
   }, [audioContext]);
 
-  // Stop any existing audio before starting new audio
+  // Stop any existing audio before starting new audio with proper cleanup
   const stopExistingAudio = useCallback(() => {
     if (sourceNode) {
       try {
         sourceNode.stop();
+        sourceNode.disconnect();
       } catch (error) {
-        // Source might already be stopped, ignore error
+        // Source might already be stopped/disconnected, ignore error
+        console.log('Source cleanup error (safe to ignore):', error);
       }
       setSourceNode(null);
     }
@@ -364,16 +366,23 @@ export function useAudioProcessor() {
     }
   }, [audioContext, audioBuffer, analyserNode, sourceNode, isPlaying, audioStartTime, playbackOffset, pausedAt, currentTime]);
 
-  // Seek to a specific time position - simplified and time-index driven
-  const seekTo = useCallback((timePosition: number) => {
+  // Seek to a specific time position with proper source cleanup
+  const seekTo = useCallback(async (timePosition: number) => {
     if (!audioBuffer) return;
     
     const clampedPosition = Math.max(0, Math.min(timePosition, audioBuffer.duration));
     console.log('Seeking to position:', clampedPosition, 'seconds');
     
-    // Stop any playing audio
+    const wasPlaying = isPlaying;
+    
+    // Force stop any existing audio with immediate cleanup
     if (sourceNode) {
-      sourceNode.stop();
+      try {
+        sourceNode.stop();
+        sourceNode.disconnect();
+      } catch (e) {
+        // Source might already be stopped
+      }
       setSourceNode(null);
     }
     
@@ -382,8 +391,11 @@ export function useAudioProcessor() {
     setPlaybackProgress(audioBuffer.duration > 0 ? (clampedPosition / audioBuffer.duration) * 100 : 0);
     setPlaybackOffset(clampedPosition);
     
-    // If currently playing, restart from new position
-    if (isPlaying && audioContext && analyserNode) {
+    // If was playing, restart from new position after a small delay to ensure cleanup
+    if (wasPlaying && audioContext && analyserNode) {
+      // Small delay to ensure previous source is fully stopped
+      await new Promise(resolve => setTimeout(resolve, 10));
+      
       const source = audioContext.createBufferSource();
       source.buffer = audioBuffer;
       source.connect(analyserNode);
@@ -402,10 +414,15 @@ export function useAudioProcessor() {
     }
   }, [audioBuffer, audioContext, analyserNode, sourceNode, isPlaying]);
 
-  // Stop audio
+  // Stop audio with proper cleanup
   const stopAudio = useCallback(() => {
     if (sourceNode) {
-      sourceNode.stop();
+      try {
+        sourceNode.stop();
+        sourceNode.disconnect();
+      } catch (error) {
+        console.log('Stop audio cleanup error (safe to ignore):', error);
+      }
       setSourceNode(null);
     }
     setIsPlaying(false);
