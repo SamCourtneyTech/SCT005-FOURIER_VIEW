@@ -373,7 +373,7 @@ export function useAudioProcessor() {
       setSourceNode(source);
       setIsPlaying(true);
     }
-  }, [audioContext, audioBuffer, analyserNode, sourceNode]);
+  }, [audioContext, audioBuffer, analyserNode, sourceNode, isPlaying]);
 
   // Seek to a specific time position - reset stream, update time, restart
   const seekTo = useCallback((timePosition: number) => {
@@ -437,7 +437,7 @@ export function useAudioProcessor() {
     }, 50);
     
     console.log('🎯 SEEK END: Complete');
-  }, [audioBuffer, audioContext, analyserNode, sourceNode]);
+  }, [audioBuffer, audioContext, analyserNode, sourceNode, isPlaying]);
 
   // Stop audio with proper cleanup
   const stopAudio = useCallback(() => {
