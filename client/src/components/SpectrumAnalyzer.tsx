@@ -20,36 +20,10 @@ export function SpectrumAnalyzer({
   sampleWindow,
   dftResults,
 }: SpectrumAnalyzerProps) {
-  const [scalingMode, setScalingMode] = useState<'linear' | 'log' | 'perceptual'>('perceptual');
+  const [isLogScale] = useState(false); // Removed toggle functionality
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>();
   const frozenDftResultsRef = useRef<{ real: number; imag: number; magnitude: number; phase: number }[]>([]);
-
-  // A-weighting approximation for perceptual frequency weighting
-  const getAWeighting = (frequency: number): number => {
-    const f2 = frequency * frequency;
-    const f4 = f2 * f2;
-    // Simplified A-weighting formula
-    const numerator = 12194 * 12194 * f4;
-    const denominator = (f2 + 20.6 * 20.6) * Math.sqrt((f2 + 107.7 * 107.7) * (f2 + 737.9 * 737.9)) * (f2 + 12194 * 12194);
-    return Math.max(0.1, numerator / denominator); // Prevent zero weights
-  };
-
-  // Apply different scaling modes to magnitude
-  const applyScaling = (magnitude: number, frequency: number, index: number): number => {
-    switch (scalingMode) {
-      case 'log':
-        return magnitude > 0 ? 20 * Math.log10(magnitude + 1e-10) + 100 : 0; // dB scale
-      case 'perceptual':
-        // Combine logarithmic scaling with A-weighting
-        const aWeight = getAWeighting(frequency);
-        const logMag = magnitude > 0 ? Math.log10(magnitude + 1e-10) : -10;
-        return Math.max(0, (logMag + 10) * aWeight * 50); // Scaled and weighted
-      case 'linear':
-      default:
-        return magnitude;
-    }
-  };
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -157,29 +131,14 @@ export function SpectrumAnalyzer({
         ctx.fillText('fs', samplingX, rect.height - 5);
       }
 
-      // Draw DFT results as frequency spectrum with scaling
+      // Draw DFT results as frequency spectrum
       if (displayResults && displayResults.length >= sampleWindow) {
         const barWidth = gridSpacing * 0.8; // Leave some spacing between bars
         
-        // Calculate frequencies for each bin
-        const sampleRate = 44100; // Default, could be passed as prop
-        const frequencies = Array.from({length: sampleWindow}, (_, i) => 
-          (i * sampleRate) / (2 * sampleWindow)
-        );
-        
-        // Apply scaling to all magnitudes
-        const scaledMagnitudes = displayResults.slice(0, sampleWindow).map((result, i) => {
-          const magnitude = result?.magnitude || 0;
-          const frequency = frequencies[i];
-          return applyScaling(magnitude, frequency, i);
-        });
-        
-        // Find max for normalization
-        const maxScaledMagnitude = Math.max(...scaledMagnitudes, 1); // Prevent division by zero
-        
         for (let i = 0; i < sampleWindow; i++) {
-          const scaledMagnitude = scaledMagnitudes[i];
-          const normalizedMagnitude = scaledMagnitude / maxScaledMagnitude;
+          const magnitude = displayResults[i]?.magnitude || 0;
+          const maxMagnitude = Math.max(...displayResults.slice(0, sampleWindow).map(r => r.magnitude));
+          const normalizedMagnitude = maxMagnitude > 0 ? magnitude / maxMagnitude : 0;
           
           const x = padding + i * gridSpacing + (gridSpacing - barWidth) / 2;
           const barHeight = normalizedMagnitude * (rect.height - 35); // Leave space for labels
@@ -218,7 +177,7 @@ export function SpectrumAnalyzer({
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [analyserNode, dftResults, sampleWindow, isPlaying, scalingMode, applyScaling]);
+  }, [analyserNode, dftResults, sampleWindow, isPlaying]);
 
   return (
     <div className="bg-surface p-4 flex flex-col h-full md:h-full overflow-hidden">
@@ -233,34 +192,8 @@ export function SpectrumAnalyzer({
             </div>
           )}
         </div>
-        <div className="flex items-center space-x-2">
-          <div className="flex gap-1">
-            <Button
-              size="sm"
-              variant={scalingMode === 'linear' ? 'default' : 'outline'}
-              onClick={() => setScalingMode('linear')}
-              className="text-xs h-6 px-2"
-            >
-              Linear
-            </Button>
-            <Button
-              size="sm"
-              variant={scalingMode === 'log' ? 'default' : 'outline'}
-              onClick={() => setScalingMode('log')}
-              className="text-xs h-6 px-2"
-            >
-              Log
-            </Button>
-            <Button
-              size="sm"
-              variant={scalingMode === 'perceptual' ? 'default' : 'outline'}
-              onClick={() => setScalingMode('perceptual')}
-              className="text-xs h-6 px-2"
-            >
-              Perceptual
-            </Button>
-          </div>
-          <span className="text-xs text-text-secondary">|X[k]|</span>
+        <div className="flex items-center space-x-2 text-xs text-text-secondary">
+          <span>|X[k]|</span>
         </div>
       </div>
 
