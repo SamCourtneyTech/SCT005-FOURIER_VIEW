@@ -411,21 +411,18 @@ export function useAudioProcessor() {
     setFrozenTime(0);
   }, [sourceNode]);
 
-  // Update playback time and audio analysis - simplified
+  // Update playback time and audio analysis - only when playing
   useEffect(() => {
     if (!isPlaying || !audioContext || !analyserNode) return;
 
     const updateTime = () => {      
-      // Only update time index when actually playing
-      if (isPlaying) {
-        const elapsedFromStart = audioContext.currentTime - audioStartTime;
-        const currentPos = playbackOffset + elapsedFromStart;
-        
-        if (duration > 0) {
-          const clampedPos = Math.max(0, Math.min(currentPos, duration));
-          setCurrentTime(clampedPos);
-          setPlaybackProgress((clampedPos / duration) * 100);
-        }
+      const elapsedFromStart = audioContext.currentTime - audioStartTime;
+      const currentPos = playbackOffset + elapsedFromStart;
+      
+      if (duration > 0) {
+        const clampedPos = Math.max(0, Math.min(currentPos, duration));
+        setCurrentTime(clampedPos);
+        setPlaybackProgress((clampedPos / duration) * 100);
       }
 
       // Analyze audio for real-time data
@@ -464,13 +461,11 @@ export function useAudioProcessor() {
       setPeakFrequency(dominantFrequency);
       setPeakMagnitude(20 * Math.log10(maxValue / 255 + 1e-10));
       
-      // Continue animation if still playing
-      if (isPlaying) {
-        requestAnimationFrame(updateTime);
-      }
     };
 
-    updateTime();
+    const interval = setInterval(updateTime, 16); // ~60fps updates
+
+    return () => clearInterval(interval);
   }, [isPlaying, audioContext, analyserNode, duration, audioStartTime, playbackOffset]);
 
   return {
