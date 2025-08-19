@@ -22,7 +22,6 @@ export function useAudioProcessor() {
   const [playbackOffset, setPlaybackOffset] = useState<number>(0);
   const [timerFrozen, setTimerFrozen] = useState<boolean>(false);
   const [frozenTime, setFrozenTime] = useState<number>(0);
-  const [isSeeking, setIsSeeking] = useState<boolean>(false);
 
   // Initialize audio context
   const initializeAudioContext = useCallback(async () => {
@@ -308,14 +307,6 @@ export function useAudioProcessor() {
 
   // Toggle play/pause
   const togglePlayPause = useCallback(async () => {
-    console.log('🎮 TOGGLE called: isPlaying =', isPlaying, 'isSeeking =', isSeeking);
-    
-    // Don't do anything if we're currently seeking
-    if (isSeeking) {
-      console.log('🚫 TOGGLE: Blocked - currently seeking');
-      return;
-    }
-    
     // Initialize audio context if needed (especially for mobile)
     if (!audioContext) {
       await initializeAudioContext();
@@ -346,7 +337,7 @@ export function useAudioProcessor() {
       source.buffer = audioBuffer;
       source.connect(analyserNode);
       
-      // Always use currentTime as the authoritative position (access current value)
+      // Always use currentTime as the authoritative position
       const startTime = Math.max(0, Math.min(currentTime, audioBuffer.duration));
       
       if (startTime >= audioBuffer.duration) {
@@ -373,17 +364,15 @@ export function useAudioProcessor() {
       setSourceNode(source);
       setIsPlaying(true);
     }
-  }, [audioContext, audioBuffer, analyserNode, sourceNode, isPlaying]);
+  }, [audioContext, audioBuffer, analyserNode, sourceNode, isPlaying, audioStartTime, playbackOffset, pausedAt, currentTime]);
 
   // Seek to a specific time position - reset stream, update time, restart
   const seekTo = useCallback((timePosition: number) => {
     if (!audioBuffer || !audioContext || !analyserNode) return;
     
     const clampedPosition = Math.max(0, Math.min(timePosition, audioBuffer.duration));
-    console.log('🎯 SEEK START: Seeking to position:', clampedPosition, 'seconds', 'wasPlaying:', isPlaying);
+    console.log('Seeking to position:', clampedPosition, 'seconds');
     
-    // Set seeking flag to prevent togglePlayPause interference
-    setIsSeeking(true);
     const wasPlaying = isPlaying;
     
     // STEP 1: Reset current audio stream completely
@@ -391,24 +380,20 @@ export function useAudioProcessor() {
       try {
         sourceNode.stop();
         sourceNode.disconnect();
-        console.log('🛑 SEEK: Stopped existing source');
       } catch (e) {
-        console.log('🛑 SEEK: Source already stopped');
+        // Already stopped, ignore
       }
       setSourceNode(null);
     }
     setIsPlaying(false);
-    console.log('🛑 SEEK: Set isPlaying to false');
     
     // STEP 2: Update time index to clicked position
     setCurrentTime(clampedPosition);
     setPlaybackProgress(audioBuffer.duration > 0 ? (clampedPosition / audioBuffer.duration) * 100 : 0);
     setPlaybackOffset(clampedPosition);
-    console.log('⏰ SEEK: Updated time index to', clampedPosition);
     
     // STEP 3: If was playing, immediately start new stream from new position
     if (wasPlaying) {
-      console.log('▶️ SEEK: Starting new source at', clampedPosition);
       const source = audioContext.createBufferSource();
       source.buffer = audioBuffer;
       source.connect(analyserNode);
@@ -417,7 +402,6 @@ export function useAudioProcessor() {
       setSourceNode(source);
       setAudioStartTime(audioContext.currentTime);
       setIsPlaying(true);
-      console.log('✅ SEEK: New source started and isPlaying set to true');
       
       source.onended = () => {
         setIsPlaying(false);
@@ -426,17 +410,7 @@ export function useAudioProcessor() {
         setPlaybackProgress(0);
         setPlaybackOffset(0);
       };
-    } else {
-      console.log('⏸️ SEEK: Was not playing, staying paused');
     }
-    
-    // Clear seeking flag after a brief delay to allow state updates to complete
-    setTimeout(() => {
-      setIsSeeking(false);
-      console.log('🏁 SEEK: Seeking flag cleared');
-    }, 50);
-    
-    console.log('🎯 SEEK END: Complete');
   }, [audioBuffer, audioContext, analyserNode, sourceNode, isPlaying]);
 
   // Stop audio with proper cleanup
