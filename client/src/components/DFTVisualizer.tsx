@@ -263,17 +263,13 @@ export function DFTVisualizer() {
                 className="w-32 h-1 bg-gray-600 rounded-full mx-3 relative cursor-pointer"
                 onMouseDown={(e) => {
                   e.preventDefault();
+                  e.stopPropagation();
                   const rect = e.currentTarget.getBoundingClientRect();
                   const clickX = e.clientX - rect.left;
                   const percentage = Math.max(0, Math.min(1, clickX / rect.width));
                   const newTime = percentage * duration;
                   
-                  // Immediately update progress bar visual
-                  const newProgress = percentage * 100;
-                  const progressBar = e.currentTarget.querySelector('.bg-primary') as HTMLElement;
-                  if (progressBar) {
-                    progressBar.style.width = `${newProgress}%`;
-                  }
+                  console.log('Progress bar clicked:', { clickX, percentage, newTime, duration });
                   
                   seekTo(newTime);
                 }}

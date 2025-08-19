@@ -405,7 +405,6 @@ export function useAudioProcessor() {
       
       setSourceNode(source);
       setAudioStartTime(audioContext.currentTime);
-      setTimerFrozen(false);
       setIsPlaying(true); // Ensure playing state is maintained
       
       source.onended = () => {
@@ -419,10 +418,8 @@ export function useAudioProcessor() {
         setFrozenTime(0);
       };
     } else {
-      // If was paused, stay paused but update frozen time
+      // If was paused, stay paused - no need to set frozen time since we're not playing
       setIsPlaying(false); // Ensure paused state is maintained
-      setTimerFrozen(true);
-      setFrozenTime(clampedPosition);
     }
   }, [audioBuffer, audioContext, analyserNode, sourceNode, isPlaying]);
 
@@ -449,8 +446,8 @@ export function useAudioProcessor() {
       const elapsedFromStart = audioContext.currentTime - audioStartTime;
       const currentPos = playbackOffset + elapsedFromStart;
       
-      // Only update display time when not frozen and we have a valid duration
-      if (!timerFrozen && duration > 0) {
+      // Only update display time when playing and we have a valid duration
+      if (duration > 0) {
         const clampedPos = Math.max(0, Math.min(currentPos, duration));
         setCurrentTime(clampedPos);
         setPlaybackProgress((clampedPos / duration) * 100);
