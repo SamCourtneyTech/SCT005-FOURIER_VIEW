@@ -325,6 +325,12 @@ export function useAudioProcessor() {
       setIsPlaying(false);
     } else {
       // Play: always start from current time index
+      // First, ensure no existing audio is playing
+      if (sourceNode) {
+        sourceNode.stop();
+        setSourceNode(null);
+      }
+      
       const source = audioContext.createBufferSource();
       source.buffer = audioBuffer;
       source.connect(analyserNode);
