@@ -12,52 +12,78 @@ function processFrequencyData(
   }
 
   if (analysisMode === "raw") {
-    // Return raw magnitudes
+    // Return raw magnitudes for all bins
     return dftResults.slice(0, sampleWindow).map(result => result.magnitude);
   }
 
-  // Normalized processing following DSP best practices
-  const magnitudes = dftResults.slice(0, sampleWindow).map(result => result.magnitude);
-  
-  // 1. Detrend: subtract mean (simulated since we're working with DFT results)
-  const mean = magnitudes.reduce((sum, val) => sum + val, 0) / magnitudes.length;
-  const detrendedMagnitudes = magnitudes.map(mag => mag - mean);
-  
-  // 2. Apply Hann window scaling correction
-  // For a Hann window, coherent gain CG = 0.5
-  const CG = 0.5;
+  // Proper DSP normalization pipeline
   const N = sampleWindow;
   
-  // 3. Correct scaling for one-sided spectrum
-  const normalizedMagnitudes = detrendedMagnitudes.map((mag, k) => {
-    const absMag = Math.abs(mag);
+  // 1. Extract complex values and convert to proper format
+  const complexData = dftResults.slice(0, N).map(result => ({
+    real: result.real,
+    imag: result.imag,
+    magnitude: Math.sqrt(result.real * result.real + result.imag * result.imag)
+  }));
+  
+  // 2. Simulate detrending effect on DFT results
+  // Remove mean from magnitudes (simulated post-DFT detrending effect)
+  const meanMagnitude = complexData.reduce((sum, val) => sum + val.magnitude, 0) / N;
+  const detrendedData = complexData.map(val => ({
+    ...val,
+    magnitude: Math.max(val.magnitude - meanMagnitude * 0.1, 0) // Conservative detrend simulation
+  }));
+  
+  // 3. Apply Hann window correction
+  // For Hann window: CG = 0.5, U ≈ 0.375
+  const CG = 0.5; // Coherent gain
+  const U = 0.375; // Power factor for Hann window
+  
+  // 4. One-sided spectrum processing (0 to fs/2 only)
+  const oneSidedLength = Math.floor(N / 2) + 1;
+  const oneSidedMagnitudes: number[] = [];
+  
+  for (let k = 0; k < oneSidedLength; k++) {
+    const magnitude = detrendedData[k]?.magnitude || 0;
+    
     if (k === 0 || k === Math.floor(N / 2)) {
-      // DC and Nyquist components (if present)
-      return absMag / (N * CG);
-    } else if (k < N / 2) {
-      // Positive frequency components (double for one-sided)
-      return (2 * absMag) / (N * CG);
+      // DC and Nyquist components (no doubling)
+      oneSidedMagnitudes[k] = magnitude / (N * CG);
     } else {
-      // Negative frequency components (not displayed in one-sided)
-      return 0;
+      // Positive frequency components (double for one-sided)
+      oneSidedMagnitudes[k] = (2 * magnitude) / (N * CG);
     }
+  }
+  
+  // 5. Convert to PSD (Power Spectral Density) for better representation
+  const epsilon = 1e-12; // Avoid log(0)
+  const psdMagnitudes = oneSidedMagnitudes.map(mag => {
+    const power = mag * mag; // Convert amplitude to power
+    return Math.max(power, epsilon);
   });
   
-  // 4. Convert to dB scale for better visualization
-  const dBMagnitudes = normalizedMagnitudes.map(mag => {
-    const linearMag = Math.max(mag, 1e-10); // Avoid log(0)
-    return 20 * Math.log10(linearMag);
+  // 6. Apply dB conversion with proper floor
+  const dBMagnitudes = psdMagnitudes.map(power => {
+    return 10 * Math.log10(power); // 10*log10 for power (not 20*log10 for amplitude)
   });
   
-  // 5. Apply light smoothing (optional, minimal 3-point moving average)
-  const smoothedMagnitudes = dBMagnitudes.map((mag, i) => {
-    if (i === 0 || i === dBMagnitudes.length - 1) return mag;
-    return (dBMagnitudes[i - 1] + mag + dBMagnitudes[i + 1]) / 3;
+  // 7. Global normalization (not per-bin) to preserve relative amplitudes
+  const maxdB = Math.max(...dBMagnitudes);
+  const mindB = Math.min(...dBMagnitudes);
+  const dBRange = maxdB - mindB;
+  
+  // Normalize to 0-1 range for visualization while preserving spectral shape
+  const normalizedMagnitudes = dBMagnitudes.map(dB => {
+    return dBRange > 0 ? (dB - mindB) / dBRange : 0;
   });
   
-  // Normalize to positive values for visualization
-  const minVal = Math.min(...smoothedMagnitudes);
-  return smoothedMagnitudes.map(mag => mag - minVal);
+  // Pad to original sample window size for consistent visualization
+  const paddedMagnitudes = new Array(sampleWindow).fill(0);
+  for (let i = 0; i < Math.min(oneSidedLength, sampleWindow); i++) {
+    paddedMagnitudes[i] = normalizedMagnitudes[i];
+  }
+  
+  return paddedMagnitudes;
 }
 
 interface SpectrumAnalyzerProps {
@@ -199,33 +225,49 @@ export function SpectrumAnalyzer({
       if (processedMagnitudes && processedMagnitudes.length >= sampleWindow) {
         const barWidth = gridSpacing * 0.8; // Leave some spacing between bars
         
-        // Find max magnitude for normalization
-        const maxMagnitude = Math.max(...processedMagnitudes.slice(0, sampleWindow));
-        const minMagnitude = Math.min(...processedMagnitudes.slice(0, sampleWindow));
+        // For normalized mode, show one-sided spectrum (0 to fs/2)
+        const displayLength = analysisMode === "normalized" ? Math.floor(sampleWindow / 2) + 1 : sampleWindow;
+        
+        // Find max magnitude for visualization scaling
+        const relevantMagnitudes = processedMagnitudes.slice(0, displayLength);
+        const maxMagnitude = Math.max(...relevantMagnitudes);
+        const minMagnitude = Math.min(...relevantMagnitudes);
         const range = maxMagnitude - minMagnitude;
         
-        for (let i = 0; i < sampleWindow; i++) {
+        for (let i = 0; i < displayLength; i++) {
           const magnitude = processedMagnitudes[i] || 0;
           // Normalize magnitude for visualization (0 to 1)
           const normalizedMagnitude = range > 0 ? (magnitude - minMagnitude) / range : 0;
           
-          const x = padding + i * gridSpacing + (gridSpacing - barWidth) / 2;
+          // Adjust x positioning for one-sided display
+          const effectiveGridSpacing = analysisMode === "normalized" ? 
+            (usableWidth / displayLength) : gridSpacing;
+          const x = padding + i * effectiveGridSpacing + (effectiveGridSpacing - barWidth) / 2;
           const barHeight = normalizedMagnitude * (rect.height - 35); // Leave space for labels
           
-          // Color bars based on symmetry pairs
-          const symmetricIndex = sampleWindow - i;
-          const isSymmetricPair = i > 0 && i < sampleWindow/2 && symmetricIndex < sampleWindow;
-          const isNyquist = i === sampleWindow/2;
+          // Color bars based on frequency content and analysis mode
           const isDC = i === 0;
+          const isNyquist = i === Math.floor(displayLength / 2) && analysisMode === "normalized";
+          const isPositiveFreq = i > 0 && i < Math.floor(displayLength / 2);
           
           if (isDC) {
             ctx.fillStyle = '#4CAF50'; // Green for DC
           } else if (isNyquist) {
             ctx.fillStyle = '#9C27B0'; // Purple for Nyquist
-          } else if (isSymmetricPair) {
-            ctx.fillStyle = '#2196F3'; // Blue for symmetric pairs
-          } else if (i > sampleWindow/2) {
-            ctx.fillStyle = '#2196F3'; // Blue for symmetric pairs (second half)
+          } else if (analysisMode === "normalized" && isPositiveFreq) {
+            ctx.fillStyle = '#2196F3'; // Blue for positive frequencies (one-sided)
+          } else if (analysisMode === "raw") {
+            // Raw mode: use original coloring scheme
+            const symmetricIndex = sampleWindow - i;
+            const isSymmetricPair = i > 0 && i < sampleWindow/2 && symmetricIndex < sampleWindow;
+            
+            if (isSymmetricPair) {
+              ctx.fillStyle = '#2196F3'; // Blue for symmetric pairs
+            } else if (i > sampleWindow/2) {
+              ctx.fillStyle = '#2196F3'; // Blue for symmetric pairs (second half)
+            } else {
+              ctx.fillStyle = '#FF5722'; // Default orange
+            }
           } else {
             ctx.fillStyle = '#FF5722'; // Default orange
           }
@@ -246,7 +288,7 @@ export function SpectrumAnalyzer({
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [analyserNode, dftResults, sampleWindow, isPlaying]);
+  }, [analyserNode, dftResults, sampleWindow, isPlaying, analysisMode]);
 
   return (
     <div className="bg-surface p-4 flex flex-col h-full md:h-full overflow-hidden">
