@@ -366,36 +366,34 @@ export function useAudioProcessor() {
     }
   }, [audioContext, audioBuffer, analyserNode, sourceNode, isPlaying, audioStartTime, playbackOffset, pausedAt, currentTime]);
 
-  // Seek to a specific time position with proper source cleanup
-  const seekTo = useCallback(async (timePosition: number) => {
-    if (!audioBuffer) return;
+  // Seek to a specific time position - reset stream, update time, restart
+  const seekTo = useCallback((timePosition: number) => {
+    if (!audioBuffer || !audioContext || !analyserNode) return;
     
     const clampedPosition = Math.max(0, Math.min(timePosition, audioBuffer.duration));
     console.log('Seeking to position:', clampedPosition, 'seconds');
     
     const wasPlaying = isPlaying;
     
-    // Force stop any existing audio with immediate cleanup
+    // STEP 1: Reset current audio stream completely
     if (sourceNode) {
       try {
         sourceNode.stop();
         sourceNode.disconnect();
       } catch (e) {
-        // Source might already be stopped
+        // Already stopped, ignore
       }
       setSourceNode(null);
     }
+    setIsPlaying(false);
     
-    // Update time index - this is the single source of truth
+    // STEP 2: Update time index to clicked position
     setCurrentTime(clampedPosition);
     setPlaybackProgress(audioBuffer.duration > 0 ? (clampedPosition / audioBuffer.duration) * 100 : 0);
     setPlaybackOffset(clampedPosition);
     
-    // If was playing, restart from new position after a small delay to ensure cleanup
-    if (wasPlaying && audioContext && analyserNode) {
-      // Small delay to ensure previous source is fully stopped
-      await new Promise(resolve => setTimeout(resolve, 10));
-      
+    // STEP 3: If was playing, immediately start new stream from new position
+    if (wasPlaying) {
       const source = audioContext.createBufferSource();
       source.buffer = audioBuffer;
       source.connect(analyserNode);
@@ -403,6 +401,7 @@ export function useAudioProcessor() {
       
       setSourceNode(source);
       setAudioStartTime(audioContext.currentTime);
+      setIsPlaying(true);
       
       source.onended = () => {
         setIsPlaying(false);
