@@ -260,8 +260,14 @@ export function DFTVisualizer() {
               </Button>
 
               <div 
-                className="w-32 h-1 bg-gray-600 rounded-full mx-3 relative cursor-pointer"
+                className={`w-32 h-1 bg-gray-600 rounded-full mx-3 relative ${!isPlaying ? 'cursor-pointer' : 'cursor-not-allowed'}`}
                 onMouseDown={(e) => {
+                  if (isPlaying) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return; // Block clicks while playing
+                  }
+                  
                   e.preventDefault();
                   e.stopPropagation();
                   const rect = e.currentTarget.getBoundingClientRect();
