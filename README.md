@@ -12,7 +12,9 @@ FOURIER_VIEW is a browser-based visualizer for the **Discrete Fourier Transform 
    ```bash
    npm install
 4. Start the dev server:
-5. Open the localhost URL shown in your terminal.
+   ```bash
+   npm run dev
+6. Open the localhost URL shown in your terminal.
 
 ## Disclaimer  
 Parts of this project were generated using the AI service Replit.
