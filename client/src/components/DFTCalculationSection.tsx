@@ -139,12 +139,12 @@ export function DFTCalculationSection({
       // Draw amplitude bar
       ctx.fillStyle = '#1976D2';
       const barHeight = (amplitude / maxAmplitude) * centerY;
-      ctx.fillRect(10, centerY - barHeight / 2, 30, barHeight);
+      ctx.fillRect(5, centerY - barHeight / 2, 25, barHeight);
 
       // Draw twiddle factor vector
-      const vectorCenterX = 100;
+      const vectorCenterX = 70;
       const vectorScale = 20;
-      
+
       ctx.strokeStyle = '#FF5722';
       ctx.lineWidth = 2;
       ctx.beginPath();
@@ -169,7 +169,7 @@ export function DFTCalculationSection({
       // Draw labels
       ctx.fillStyle = '#FFFFFF';
       ctx.font = '10px Roboto Mono';
-      ctx.fillText('Amp', 10, displayHeight - 5);
+      ctx.fillText('Amp', 5, displayHeight - 5);
       ctx.fillText('W', vectorCenterX - 10, displayHeight - 5);
       ctx.fillText('Result', vectorCenterX + 50, displayHeight - 5);
     });
@@ -208,6 +208,7 @@ export function DFTCalculationSection({
                   width="280"
                   height="80"
                   className="w-full visualization-canvas rounded text-xs"
+                  style={{ marginLeft: '-8px' }}
                 />
                 <div className="flex justify-between mt-2 text-xs text-text-secondary font-mono">
                   <span>Amp: {factor.amplitude.toFixed(3)}</span>

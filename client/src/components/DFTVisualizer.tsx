@@ -161,12 +161,14 @@ export function DFTVisualizer() {
 
   // Load default audio on startup with proper dependency tracking
   useEffect(() => {
-    // Load the initially selected audio when audio context becomes available
-    if (audioContext && selectedExampleAudio && currentAudioSource === "example" && duration === 0) {
-      console.log('Loading initial audio:', selectedExampleAudio);
+    // Automatically load the default "full_song" audio on first mount
+    // This allows users to immediately press play without selecting audio first
+    if (selectedExampleAudio === "full_song" && currentAudioSource === "example" && duration === 0) {
+      console.log('Loading default audio on startup:', selectedExampleAudio);
+      // Initialize context and load audio
       loadExampleAudio(selectedExampleAudio);
     }
-  }, [audioContext, selectedExampleAudio, currentAudioSource, duration, loadExampleAudio]);
+  }, [selectedExampleAudio, currentAudioSource, duration, loadExampleAudio]);
 
   return (
     <div className="bg-dark text-text-primary font-sans min-h-screen flex flex-col">
@@ -255,7 +257,9 @@ export function DFTVisualizer() {
                 variant="ghost"
                 size="sm"
                 onClick={togglePlayPause}
-                className="text-success hover:text-green-400 text-xl p-2"
+                disabled={duration === 0}
+                className="text-success hover:text-green-400 text-xl p-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                title={duration === 0 ? "Loading audio..." : isPlaying ? "Pause" : "Play"}
               >
                 {isPlaying ? <Square className="w-5 h-5" /> : <Play className="w-5 h-5" />}
               </Button>
