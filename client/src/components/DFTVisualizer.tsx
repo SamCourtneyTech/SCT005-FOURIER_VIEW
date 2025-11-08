@@ -30,7 +30,7 @@ export function DFTVisualizer() {
   const [uploadedFileName, setUploadedFileName] = useState<string>("");
   const [uploadedFileURL, setUploadedFileURL] = useState<string>("");
   const [currentAudioSource, setCurrentAudioSource] = useState<"example" | "uploaded">("example");
-  const [frequencyAnalysisMode, setFrequencyAnalysisMode] = useState<"raw" | "normalized">("raw");
+  const [useHannWindow, setUseHannWindow] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -61,7 +61,7 @@ export function DFTVisualizer() {
     dftResults,
     twiddleFactors,
     currentSample,
-  } = useDFTCalculation(analyserNode, sampleWindow, selectedFrequencyBin, isPlaying);
+  } = useDFTCalculation(analyserNode, sampleWindow, selectedFrequencyBin, isPlaying, useHannWindow);
 
   const handleGetUploadParameters = async () => {
     const response = await fetch("/api/objects/upload", {
@@ -342,42 +342,17 @@ export function DFTVisualizer() {
 
         {/* 4. Frequency Domain Section (Bottom) */}
         <div className="h-96 flex-shrink-0">
-          <div className="bg-surface border border-gray-700 rounded-lg p-4 flex flex-col gap-4 h-full">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-text-primary">Frequency Domain Spectrum</h3>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-text-secondary">Analysis Mode:</span>
-                <Button
-                  variant={frequencyAnalysisMode === "raw" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setFrequencyAnalysisMode("raw")}
-                  className="text-xs"
-                  data-testid="button-raw-mode"
-                >
-                  Raw
-                </Button>
-                <Button
-                  variant={frequencyAnalysisMode === "normalized" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setFrequencyAnalysisMode("normalized")}
-                  className="text-xs"
-                  data-testid="button-normalized-mode"
-                >
-                  Normalized
-                </Button>
-              </div>
-            </div>
-            <SpectrumAnalyzer
-              analyserNode={analyserNode}
-              peakFrequency={peakFrequency}
-              peakMagnitude={peakMagnitude}
-              frequencyResolution={frequencyResolution}
-              isPlaying={isPlaying}
-              sampleWindow={sampleWindow}
-              dftResults={dftResults}
-              analysisMode={frequencyAnalysisMode}
-            />
-          </div>
+          <SpectrumAnalyzer
+            analyserNode={analyserNode}
+            peakFrequency={peakFrequency}
+            peakMagnitude={peakMagnitude}
+            frequencyResolution={frequencyResolution}
+            isPlaying={isPlaying}
+            sampleWindow={sampleWindow}
+            dftResults={dftResults}
+            useHannWindow={useHannWindow}
+            onHannWindowChange={setUseHannWindow}
+          />
         </div>
       </main>
     </div>

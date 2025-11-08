@@ -64,3 +64,17 @@ export function normalizeDFT(dftResult: Complex[]): Complex[] {
     imag: imag / N,
   }));
 }
+
+// Apply Hann window to reduce spectral leakage
+// Hann window: w[n] = 0.5 * (1 - cos(2π*n/(N-1)))
+export function applyHannWindow(signal: Float32Array): Float32Array {
+  const N = signal.length;
+  const windowed = new Float32Array(N);
+
+  for (let n = 0; n < N; n++) {
+    const windowValue = 0.5 * (1 - Math.cos(2 * Math.PI * n / (N - 1)));
+    windowed[n] = signal[n] * windowValue;
+  }
+
+  return windowed;
+}

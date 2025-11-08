@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { calculateDFT, getTwiddleFactor } from "@/utils/dft";
+import { calculateDFT, getTwiddleFactor, applyHannWindow } from "@/utils/dft";
 
 interface DFTResult {
   real: number;
@@ -19,7 +19,8 @@ export function useDFTCalculation(
   analyserNode: AnalyserNode | null,
   sampleWindow: number,
   selectedFrequencyBin: number,
-  isPlaying: boolean
+  isPlaying: boolean,
+  useHannWindow: boolean = false
 ) {
   const [timeData, setTimeData] = useState<Float32Array | null>(null);
   const [frequencyData, setFrequencyData] = useState<Uint8Array | null>(null);
@@ -59,9 +60,14 @@ export function useDFTCalculation(
       setFrequencyData(freqArray);
 
       // Take a sample window of the specified size
-      const windowData = new Float32Array(sampleWindow);
+      let windowData = new Float32Array(sampleWindow);
       for (let i = 0; i < sampleWindow; i++) {
         windowData[i] = timeArray[i] || 0;
+      }
+
+      // Apply Hann window if enabled to reduce spectral leakage
+      if (useHannWindow) {
+        windowData = applyHannWindow(windowData);
       }
 
       // Calculate DFT for frequency bins - limit to prevent lag on large N
@@ -123,7 +129,7 @@ export function useDFTCalculation(
     };
 
     updateDFT();
-  }, [analyserNode, sampleWindow, selectedFrequencyBin, isPlaying, frozenData]);
+  }, [analyserNode, sampleWindow, selectedFrequencyBin, isPlaying, frozenData, useHannWindow]);
 
   // Don't clear frozen data when resuming - keep the last captured state
 

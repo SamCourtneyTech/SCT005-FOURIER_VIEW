@@ -1,89 +1,18 @@
 import { useState, useEffect, useRef } from "react";
-import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
-// Function to process frequency data based on analysis mode
+// Function to extract raw frequency magnitudes from DFT results
 function processFrequencyData(
   dftResults: { real: number; imag: number; magnitude: number; phase: number }[],
-  analysisMode: "raw" | "normalized",
   sampleWindow: number
 ): number[] {
   if (!dftResults || dftResults.length === 0) {
     return [];
   }
 
-  if (analysisMode === "raw") {
-    // Return raw magnitudes for all bins
-    return dftResults.slice(0, sampleWindow).map(result => result.magnitude);
-  }
-
-  // Proper DSP normalization pipeline
-  const N = sampleWindow;
-  
-  // 1. Extract complex values and convert to proper format
-  const complexData = dftResults.slice(0, N).map(result => ({
-    real: result.real,
-    imag: result.imag,
-    magnitude: Math.sqrt(result.real * result.real + result.imag * result.imag)
-  }));
-  
-  // 2. Simulate detrending effect on DFT results
-  // Remove mean from magnitudes (simulated post-DFT detrending effect)
-  const meanMagnitude = complexData.reduce((sum, val) => sum + val.magnitude, 0) / N;
-  const detrendedData = complexData.map(val => ({
-    ...val,
-    magnitude: Math.max(val.magnitude - meanMagnitude * 0.1, 0) // Conservative detrend simulation
-  }));
-  
-  // 3. Apply Hann window correction
-  // For Hann window: CG = 0.5, U ≈ 0.375
-  const CG = 0.5; // Coherent gain
-  const U = 0.375; // Power factor for Hann window
-  
-  // 4. One-sided spectrum processing (0 to fs/2 only)
-  const oneSidedLength = Math.floor(N / 2) + 1;
-  const oneSidedMagnitudes: number[] = [];
-  
-  for (let k = 0; k < oneSidedLength; k++) {
-    const magnitude = detrendedData[k]?.magnitude || 0;
-    
-    if (k === 0 || k === Math.floor(N / 2)) {
-      // DC and Nyquist components (no doubling)
-      oneSidedMagnitudes[k] = magnitude / (N * CG);
-    } else {
-      // Positive frequency components (double for one-sided)
-      oneSidedMagnitudes[k] = (2 * magnitude) / (N * CG);
-    }
-  }
-  
-  // 5. Convert to PSD (Power Spectral Density) for better representation
-  const epsilon = 1e-12; // Avoid log(0)
-  const psdMagnitudes = oneSidedMagnitudes.map(mag => {
-    const power = mag * mag; // Convert amplitude to power
-    return Math.max(power, epsilon);
-  });
-  
-  // 6. Apply dB conversion with proper floor
-  const dBMagnitudes = psdMagnitudes.map(power => {
-    return 10 * Math.log10(power); // 10*log10 for power (not 20*log10 for amplitude)
-  });
-  
-  // 7. Global normalization (not per-bin) to preserve relative amplitudes
-  const maxdB = Math.max(...dBMagnitudes);
-  const mindB = Math.min(...dBMagnitudes);
-  const dBRange = maxdB - mindB;
-  
-  // Normalize to 0-1 range for visualization while preserving spectral shape
-  const normalizedMagnitudes = dBMagnitudes.map(dB => {
-    return dBRange > 0 ? (dB - mindB) / dBRange : 0;
-  });
-  
-  // Pad to original sample window size for consistent visualization
-  const paddedMagnitudes = new Array(sampleWindow).fill(0);
-  for (let i = 0; i < Math.min(oneSidedLength, sampleWindow); i++) {
-    paddedMagnitudes[i] = normalizedMagnitudes[i];
-  }
-  
-  return paddedMagnitudes;
+  // Return raw magnitudes for all bins
+  return dftResults.slice(0, sampleWindow).map(result => result.magnitude);
 }
 
 interface SpectrumAnalyzerProps {
@@ -94,7 +23,8 @@ interface SpectrumAnalyzerProps {
   isPlaying?: boolean;
   sampleWindow: number;
   dftResults: { real: number; imag: number; magnitude: number; phase: number }[];
-  analysisMode?: "raw" | "normalized";
+  useHannWindow?: boolean;
+  onHannWindowChange?: (enabled: boolean) => void;
 }
 
 export function SpectrumAnalyzer({
@@ -105,7 +35,8 @@ export function SpectrumAnalyzer({
   isPlaying = true,
   sampleWindow,
   dftResults,
-  analysisMode = "raw",
+  useHannWindow = false,
+  onHannWindowChange,
 }: SpectrumAnalyzerProps) {
   const [isLogScale] = useState(false); // Removed toggle functionality
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -136,9 +67,9 @@ export function SpectrumAnalyzer({
 
       // Use frozen data when paused, live data when playing
       const displayResults = isPlaying ? dftResults : frozenDftResultsRef.current;
-      
-      // Apply frequency analysis processing based on mode
-      const processedMagnitudes = processFrequencyData(displayResults, analysisMode, sampleWindow);
+
+      // Extract raw magnitudes from DFT results
+      const processedMagnitudes = processFrequencyData(displayResults, sampleWindow);
 
       // Clear canvas
       ctx.fillStyle = '#1a1a1a';
@@ -224,54 +155,35 @@ export function SpectrumAnalyzer({
       // Draw DFT results as frequency spectrum
       if (processedMagnitudes && processedMagnitudes.length >= sampleWindow) {
         const barWidth = gridSpacing * 0.8; // Leave some spacing between bars
-        
-        // For normalized mode, show one-sided spectrum (0 to fs/2)
-        const displayLength = analysisMode === "normalized" ? Math.floor(sampleWindow / 2) + 1 : sampleWindow;
-        
+
         // Find max magnitude for visualization scaling
-        const relevantMagnitudes = processedMagnitudes.slice(0, displayLength);
-        const maxMagnitude = Math.max(...relevantMagnitudes);
-        const minMagnitude = Math.min(...relevantMagnitudes);
+        const maxMagnitude = Math.max(...processedMagnitudes);
+        const minMagnitude = Math.min(...processedMagnitudes);
         const range = maxMagnitude - minMagnitude;
-        
-        for (let i = 0; i < displayLength; i++) {
+
+        for (let i = 0; i < sampleWindow; i++) {
           const magnitude = processedMagnitudes[i] || 0;
           // Normalize magnitude for visualization (0 to 1)
           const normalizedMagnitude = range > 0 ? (magnitude - minMagnitude) / range : 0;
-          
-          // Adjust x positioning for one-sided display
-          const effectiveGridSpacing = analysisMode === "normalized" ? 
-            (usableWidth / displayLength) : gridSpacing;
-          const x = padding + i * effectiveGridSpacing + (effectiveGridSpacing - barWidth) / 2;
+
+          const x = padding + i * gridSpacing + (gridSpacing - barWidth) / 2;
           const barHeight = normalizedMagnitude * (rect.height - 35); // Leave space for labels
-          
-          // Color bars based on frequency content and analysis mode
+
+          // Color bars based on frequency content
           const isDC = i === 0;
-          const isNyquist = i === Math.floor(displayLength / 2) && analysisMode === "normalized";
-          const isPositiveFreq = i > 0 && i < Math.floor(displayLength / 2);
-          
+          const symmetricIndex = sampleWindow - i;
+          const isSymmetricPair = i > 0 && i < sampleWindow/2 && symmetricIndex < sampleWindow;
+
           if (isDC) {
             ctx.fillStyle = '#4CAF50'; // Green for DC
-          } else if (isNyquist) {
-            ctx.fillStyle = '#9C27B0'; // Purple for Nyquist
-          } else if (analysisMode === "normalized" && isPositiveFreq) {
-            ctx.fillStyle = '#2196F3'; // Blue for positive frequencies (one-sided)
-          } else if (analysisMode === "raw") {
-            // Raw mode: use original coloring scheme
-            const symmetricIndex = sampleWindow - i;
-            const isSymmetricPair = i > 0 && i < sampleWindow/2 && symmetricIndex < sampleWindow;
-            
-            if (isSymmetricPair) {
-              ctx.fillStyle = '#2196F3'; // Blue for symmetric pairs
-            } else if (i > sampleWindow/2) {
-              ctx.fillStyle = '#2196F3'; // Blue for symmetric pairs (second half)
-            } else {
-              ctx.fillStyle = '#FF5722'; // Default orange
-            }
+          } else if (isSymmetricPair) {
+            ctx.fillStyle = '#2196F3'; // Blue for symmetric pairs
+          } else if (i > sampleWindow/2) {
+            ctx.fillStyle = '#2196F3'; // Blue for symmetric pairs (second half)
           } else {
             ctx.fillStyle = '#FF5722'; // Default orange
           }
-          
+
           ctx.fillRect(x, rect.height - 35 - barHeight, barWidth, barHeight);
         }
       }
@@ -288,7 +200,7 @@ export function SpectrumAnalyzer({
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [analyserNode, dftResults, sampleWindow, isPlaying, analysisMode]);
+  }, [analyserNode, dftResults, sampleWindow, isPlaying]);
 
   return (
     <div className="bg-surface p-4 flex flex-col h-full md:h-full overflow-hidden">
@@ -297,14 +209,26 @@ export function SpectrumAnalyzer({
           <h2 className="text-lg font-semibold text-primary">Frequency Domain</h2>
           {sampleWindow >= 8 && (
             <div className="text-xs text-gray-400 mt-1">
-              <span className="text-green-400">■</span> DC, 
-              <span className="text-blue-400">■</span> Symmetric pairs, 
+              <span className="text-green-400">■</span> DC,
+              <span className="text-blue-400">■</span> Symmetric pairs,
               <span className="text-purple-400">■</span> Nyquist
             </div>
           )}
         </div>
-        <div className="flex items-center space-x-2 text-xs text-text-secondary">
-          <span>|X[k]|</span>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="hann-window"
+              checked={useHannWindow}
+              onCheckedChange={onHannWindowChange}
+            />
+            <Label htmlFor="hann-window" className="text-xs text-text-secondary cursor-pointer">
+              Hann Window
+            </Label>
+          </div>
+          <div className="flex items-center space-x-2 text-xs text-text-secondary">
+            <span>|X[k]|</span>
+          </div>
         </div>
       </div>
 
