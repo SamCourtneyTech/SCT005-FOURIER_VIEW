@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, memo } from "react";
 
 interface TimeDomainSectionProps {
   analyserNode: AnalyserNode | null;
@@ -10,7 +10,7 @@ interface TimeDomainSectionProps {
   timeData: Float32Array | null;
 }
 
-export function TimeDomainSection({
+export const TimeDomainSection = memo(function TimeDomainSection({
   analyserNode,
   currentAmplitude,
   dominantFreq,
@@ -22,6 +22,10 @@ export function TimeDomainSection({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>();
   const frozenDataRef = useRef<Float32Array | null>(null);
+  const cachedSizeRef = useRef<{ width: number; height: number } | null>(null);
+
+  // Pre-compute constant
+  const TWO_PI = 2 * Math.PI;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -34,11 +38,18 @@ export function TimeDomainSection({
       // Set canvas size with device pixel ratio for HD quality
       const dpr = window.devicePixelRatio || 1;
       const rect = canvas.getBoundingClientRect();
-      canvas.width = rect.width * dpr;
-      canvas.height = rect.height * dpr;
-      ctx.scale(dpr, dpr);
-      canvas.style.width = rect.width + 'px';
-      canvas.style.height = rect.height + 'px';
+
+      // Only update canvas size if it changed
+      if (!cachedSizeRef.current ||
+          cachedSizeRef.current.width !== rect.width ||
+          cachedSizeRef.current.height !== rect.height) {
+        canvas.width = rect.width * dpr;
+        canvas.height = rect.height * dpr;
+        ctx.scale(dpr, dpr);
+        canvas.style.width = rect.width + 'px';
+        canvas.style.height = rect.height + 'px';
+        cachedSizeRef.current = { width: rect.width, height: rect.height };
+      }
 
       // Clear canvas
       ctx.fillStyle = '#1a1a1a';
@@ -158,7 +169,7 @@ export function TimeDomainSection({
           // Draw sample points at the tip of each bar
           ctx.fillStyle = '#FFD700';
           ctx.beginPath();
-          ctx.arc(x + barWidth / 2, centerY - barHeight, 3, 0, 2 * Math.PI);
+          ctx.arc(x + barWidth / 2, centerY - barHeight, 3, 0, TWO_PI);
           ctx.fill();
         }
       }
@@ -208,4 +219,4 @@ export function TimeDomainSection({
       </div>
     </div>
   );
-}
+});

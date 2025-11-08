@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, memo } from "react";
 import { Input } from "./ui/input";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "./ui/button";
@@ -18,7 +18,7 @@ interface SummationSectionProps {
   isPlaying?: boolean;
 }
 
-export function SummationSection({
+export const SummationSection = memo(function SummationSection({
   dftResults,
   selectedFrequencyBin,
   onSelectFrequencyBin,
@@ -30,6 +30,9 @@ export function SummationSection({
   const [jumpToFreqBin, setJumpToFreqBin] = useState<string>("");
   const [windowStart, setWindowStart] = useState(0);
   const frozenDftResultsRef = useRef<DFTResult[]>([]);
+
+  // Pre-compute constant
+  const TWO_PI = 2 * Math.PI;
   
   // Windowed view settings
   const INITIAL_LOAD_COUNT = 16;
@@ -69,7 +72,7 @@ export function SummationSection({
   // Store current dftResults when playing for freezing on pause
   useEffect(() => {
     if (isPlaying && dftResults && dftResults.length >= sampleWindow) {
-      frozenDftResultsRef.current = [...dftResults];
+      frozenDftResultsRef.current = dftResults;
     }
   }, [isPlaying, dftResults, sampleWindow]);
 
@@ -166,7 +169,7 @@ export function SummationSection({
       ctx.lineWidth = 1;
       ctx.setLineDash([2, 2]);
       ctx.beginPath();
-      ctx.arc(centerX, centerY, result.magnitude * scale, 0, 2 * Math.PI);
+      ctx.arc(centerX, centerY, result.magnitude * scale, 0, TWO_PI);
       ctx.stroke();
       ctx.setLineDash([]);
 
@@ -178,7 +181,7 @@ export function SummationSection({
         centerY - result.imag * scale,
         3,
         0,
-        2 * Math.PI
+        TWO_PI
       );
       ctx.fill();
     });
@@ -322,4 +325,4 @@ export function SummationSection({
       </div>
     </div>
   );
-}
+});

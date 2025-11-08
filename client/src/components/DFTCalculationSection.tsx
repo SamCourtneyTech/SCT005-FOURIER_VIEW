@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, memo } from "react";
 import { Input } from "./ui/input";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "./ui/button";
@@ -12,7 +12,7 @@ interface DFTCalculationSectionProps {
   isPlaying?: boolean;
 }
 
-export function DFTCalculationSection({
+export const DFTCalculationSection = memo(function DFTCalculationSection({
   sampleWindow,
   selectedFrequencyBin,
   timeData,
@@ -65,7 +65,7 @@ export function DFTCalculationSection({
   // Store current twiddleFactors when playing for freezing on pause
   useEffect(() => {
     if (isPlaying && twiddleFactors && twiddleFactors.length >= sampleWindow) {
-      frozenTwiddleFactorsRef.current = [...twiddleFactors];
+      frozenTwiddleFactorsRef.current = twiddleFactors;
     }
   }, [isPlaying, twiddleFactors, sampleWindow]);
 
@@ -284,4 +284,4 @@ export function DFTCalculationSection({
       </div>
     </div>
   );
-}
+});

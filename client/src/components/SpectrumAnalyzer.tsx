@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, memo } from "react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
@@ -27,7 +27,7 @@ interface SpectrumAnalyzerProps {
   onHannWindowChange?: (enabled: boolean) => void;
 }
 
-export function SpectrumAnalyzer({
+export const SpectrumAnalyzer = memo(function SpectrumAnalyzer({
   analyserNode,
   peakFrequency,
   peakMagnitude,
@@ -42,6 +42,10 @@ export function SpectrumAnalyzer({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>();
   const frozenDftResultsRef = useRef<{ real: number; imag: number; magnitude: number; phase: number }[]>([]);
+  const cachedSizeRef = useRef<{ width: number; height: number } | null>(null);
+
+  // Pre-compute constant
+  const TWO_PI = 2 * Math.PI;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -54,15 +58,22 @@ export function SpectrumAnalyzer({
       // Set canvas size with device pixel ratio for HD quality
       const dpr = window.devicePixelRatio || 1;
       const rect = canvas.getBoundingClientRect();
-      canvas.width = rect.width * dpr;
-      canvas.height = rect.height * dpr;
-      ctx.scale(dpr, dpr);
-      canvas.style.width = rect.width + 'px';
-      canvas.style.height = rect.height + 'px';
+
+      // Only update canvas size if it changed
+      if (!cachedSizeRef.current ||
+          cachedSizeRef.current.width !== rect.width ||
+          cachedSizeRef.current.height !== rect.height) {
+        canvas.width = rect.width * dpr;
+        canvas.height = rect.height * dpr;
+        ctx.scale(dpr, dpr);
+        canvas.style.width = rect.width + 'px';
+        canvas.style.height = rect.height + 'px';
+        cachedSizeRef.current = { width: rect.width, height: rect.height };
+      }
 
       // Store current dftResults when playing for freezing on pause
       if (isPlaying && dftResults && dftResults.length >= sampleWindow) {
-        frozenDftResultsRef.current = [...dftResults];
+        frozenDftResultsRef.current = dftResults;
       }
 
       // Use frozen data when paused, live data when playing
@@ -255,4 +266,4 @@ export function SpectrumAnalyzer({
       </div>
     </div>
   );
-}
+});

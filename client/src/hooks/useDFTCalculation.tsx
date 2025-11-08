@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { calculateDFT, getTwiddleFactor, applyHannWindow } from "@/utils/dft";
 
 interface DFTResult {
@@ -34,6 +34,11 @@ export function useDFTCalculation(
   } | null>(null);
   const [hasInitializedForSampleWindow, setHasInitializedForSampleWindow] = useState(false);
 
+  // Reusable typed array buffers to reduce allocations
+  const timeArrayRef = useRef<Float32Array | null>(null);
+  const freqArrayRef = useRef<Uint8Array | null>(null);
+  const windowDataRef = useRef<Float32Array | null>(null);
+
   // Add debouncing for sample window changes to prevent lag
   useEffect(() => {
     // Reset arrays immediately when sample window changes to prevent stale large arrays
@@ -48,19 +53,32 @@ export function useDFTCalculation(
     if (!analyserNode) return;
 
     const updateDFT = () => {
-      // Get time domain data
+      // Get time domain data - reuse buffers to reduce GC pressure
       const bufferLength = analyserNode.frequencyBinCount;
-      const timeArray = new Float32Array(bufferLength);
-      const freqArray = new Uint8Array(bufferLength);
-      
+
+      // Allocate or reuse time array buffer
+      if (!timeArrayRef.current || timeArrayRef.current.length !== bufferLength) {
+        timeArrayRef.current = new Float32Array(bufferLength);
+      }
+      if (!freqArrayRef.current || freqArrayRef.current.length !== bufferLength) {
+        freqArrayRef.current = new Uint8Array(bufferLength);
+      }
+
+      const timeArray = timeArrayRef.current;
+      const freqArray = freqArrayRef.current;
+
       analyserNode.getFloatTimeDomainData(timeArray);
       analyserNode.getByteFrequencyData(freqArray);
-      
+
       setTimeData(timeArray);
       setFrequencyData(freqArray);
 
-      // Take a sample window of the specified size
-      let windowData = new Float32Array(sampleWindow);
+      // Take a sample window of the specified size - reuse buffer
+      if (!windowDataRef.current || windowDataRef.current.length !== sampleWindow) {
+        windowDataRef.current = new Float32Array(sampleWindow);
+      }
+      let windowData = windowDataRef.current;
+
       for (let i = 0; i < sampleWindow; i++) {
         windowData[i] = timeArray[i] || 0;
       }
@@ -129,7 +147,7 @@ export function useDFTCalculation(
     };
 
     updateDFT();
-  }, [analyserNode, sampleWindow, selectedFrequencyBin, isPlaying, frozenData, useHannWindow]);
+  }, [analyserNode, sampleWindow, selectedFrequencyBin, isPlaying, useHannWindow]);
 
   // Don't clear frozen data when resuming - keep the last captured state
 
@@ -181,21 +199,24 @@ export function useDFTCalculation(
   }, [sampleWindow, analyserNode]);
 
   // Return frozen data if paused, otherwise return live data
-  const currentData = !isPlaying && frozenData ? {
-    timeData: frozenData.timeData,
-    dftResults: frozenData.dftResults,
-    twiddleFactors: frozenData.twiddleFactors,
-  } : {
-    timeData,
-    dftResults,
-    twiddleFactors,
-  };
+  // Memoize to prevent unnecessary re-renders in consuming components
+  return useMemo(() => {
+    const currentData = !isPlaying && frozenData ? {
+      timeData: frozenData.timeData,
+      dftResults: frozenData.dftResults,
+      twiddleFactors: frozenData.twiddleFactors,
+    } : {
+      timeData,
+      dftResults,
+      twiddleFactors,
+    };
 
-  return {
-    timeData: currentData.timeData,
-    frequencyData,
-    dftResults: currentData.dftResults,
-    twiddleFactors: currentData.twiddleFactors,
-    currentSample,
-  };
+    return {
+      timeData: currentData.timeData,
+      frequencyData,
+      dftResults: currentData.dftResults,
+      twiddleFactors: currentData.twiddleFactors,
+      currentSample,
+    };
+  }, [timeData, dftResults, twiddleFactors, frequencyData, currentSample, isPlaying, frozenData]);
 }
